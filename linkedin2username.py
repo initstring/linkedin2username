@@ -92,10 +92,10 @@ class LinkedInParser(object):
 parser = LinkedInParser(username, password)
 
 def scrape_info():
+    fullNameList = []
     print('Starting search....')
     for page in range(0, searchDepth):
         print('OK, looking for results on page ' + str(page+1))
-        fullNameList = []
         url = 'https://www.linkedin.com/search/results/people/?facetCurrentCompany=%5B%22'+companyID+'%22%5D&page=' + str(page+1)
         result = parser.load_page(url)
         firstName = re.findall(r'firstName&quot;:&quot;(.*?)&', result)
