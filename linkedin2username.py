@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import cookielib
 import os
 import urllib
@@ -5,12 +7,15 @@ import urllib2
 import re
 import string
 from BeautifulSoup import BeautifulSoup
+import time
+import unicodedata
 
 #############################################
-username = ""
-password = ""
-companyID = ""
-searchDepth = 5
+username =    ""     # you username
+password =    ""     # your password
+companyID =   ""     # ID LinkedIn assigns to the target company
+searchDepth = 5      # number of results pages to crawl
+pageDelay =   1      # seconds to pause between loading pages
 #############################################
 
 
@@ -52,7 +57,7 @@ class LinkedInParser(object):
         Utility function to load HTML from URLs for us with hack to continue despite 404
         """
         # We'll print the url in case of infinite loop
-        # print "Loading URL: %s" % url
+        print('Loading URL: %s' % url)
         try:
             if data is not None:
                 response = self.opener.open(url, data)
@@ -100,17 +105,35 @@ def scrape_info():
         result = parser.load_page(url)
         firstName = re.findall(r'firstName&quot;:&quot;(.*?)&', result)
         lastName = re.findall(r'lastName&quot;:&quot;(.*?)&', result)
-        
         for first,last in zip(firstName,lastName):
             fullName = first + ' ' + last
             if fullName not in fullNameList:
                 fullNameList.append(fullName)
+        print('    [+] We have a total of ' + str(len(fullNameList)) + ' names so far...')
+        time.sleep(2)
     return fullNameList
+
+def remove_accents(string):
+    if type(string) is not unicode:
+        string = unicode(string, encoding='utf-8')
+
+    string = re.sub(u"[àáâãäå]", 'a', string)
+    string = re.sub(u"[èéêë]", 'e', string)
+    string = re.sub(u"[ìíîï]", 'i', string)
+    string = re.sub(u"[òóôõö]", 'o', string)
+    string = re.sub(u"[ùúûü]", 'u', string)
+    string = re.sub(u"[ýÿ]", 'y', string)
+    string = re.sub(u"[ß]", 'b', string)
+    return string
 
 def clean(list):
     cleanList = []
+    ascii = set(string.printable)
     for name in list:
         name = re.sub(r'[,(].*', '', name) # People have a habit of listing lame creds after their name. Gone!
+        name = re.sub(r'\.', '', name)
+        name = remove_accents(name)
+        name = filter(lambda x: x in ascii, name) # gets rid of any special characters we missed.
         name = name.strip()
         if name not in cleanList:
             cleanList.append(name)
@@ -132,8 +155,8 @@ def write_files(list):
             print('Choked on ' + name + ' but continuing...')
 
 def main():
-    fullNameList  = scrape_info()
-    cleanList = clean(fullNameList)
+    foundNames  = scrape_info()
+    cleanList = clean(foundNames)
     write_files(cleanList)
     print('All done! Check out your lovely new files.')
 
