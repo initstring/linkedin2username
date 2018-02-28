@@ -18,12 +18,12 @@ searchDepth = 5      # number of results pages to crawl
 pageDelay =   1      # seconds to pause between loading pages
 #############################################
 
+cookie_filename = "parser.cookies.txt"
 
 class LinkedInParser(object):
 
     def __init__(self, login, password):
         """ Start up... """
-        cookie_filename = "parser.cookies.txt"
         self.login = login
         self.password = password
 
@@ -92,7 +92,7 @@ class LinkedInParser(object):
         soup = BeautifulSoup(html)
         return soup.find("title")
 
-def scrape_info():
+def scrape_info(parser):
     fullNameList = []
     print('Starting search....')
     for page in range(0, searchDepth):
@@ -152,7 +152,7 @@ def write_files(list):
 
 def main():
     parser = LinkedInParser(username, password)
-    foundNames  = scrape_info()
+    foundNames  = scrape_info(parser)
     cleanList = clean(foundNames)
     write_files(cleanList)
     print('All done! Check out your lovely new files.')
