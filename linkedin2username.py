@@ -23,6 +23,7 @@ class LinkedInParser(object):
 
     def __init__(self, login, password):
         """ Start up... """
+        cookie_filename = "parser.cookies.txt"
         self.login = login
         self.password = password
 
@@ -150,7 +151,6 @@ def write_files(list):
             print('Choked on ' + name + ' but continuing...')
 
 def main():
-    cookie_filename = "parser.cookies.txt"
     parser = LinkedInParser(username, password)
     foundNames  = scrape_info()
     cleanList = clean(foundNames)
