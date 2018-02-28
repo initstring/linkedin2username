@@ -2,7 +2,7 @@
 OSINT Tool: Generate username lists from companies on LinkedIn
 
 # Progress
-This is a very early version as I needed something to work right away. It sucks. It works but it also pulls the names of mutual connections - I need to work through a bit of regex hell to fix that.
+Not pretty, but it works. Currently it also pulls the names of mutual connections - I need to work through a bit of regex hell to fix that.
 
 Right now, you need to edit the file with your username and password, as well as the numerical identifier that LinkedIn assigns to companies. You can find it in the URL when you search for employees of a given company.
 
