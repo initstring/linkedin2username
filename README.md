@@ -1,6 +1,18 @@
 # linkedin2username
 OSINT Tool: Generate username lists from companies on LinkedIn.
-This is a pure web-scraper, no API key required.
+
+This is a pure web-scraper, no API key required. You use your valid LinkedIn username and password to login, it will create several lists of possible username formats for all employees of a company you point it at.
+
+The scraping hits only the search pages, so it shouldn't notify everyone you've looked at their profiles if you have that nasty setting enabled.
+
+Use an account with a lot of connections, otherwise you'll get crappy results.
+
+Here's what you get:
+- first.last.txt: Usernames like Joe.Schmoe
+- flast.txt:      Usernames like JSchmoe
+- firstl.txt:     Usernames like JoeS
+- rawnames.txt:   Full name like Joe Schmoe
+
 ```
 usage: linkedin2username.py username company [-p PASSWORD] [-d DEPTH] [-s SLEEP]
 
@@ -25,12 +37,6 @@ optional arguments:
 
 # Progress
 I could use some help fixing the regex - right now, it will pull names of shared connections as well. Annoying but still works for my pentesting needs.
-
-It will create a few files in your local directory:
-- first.last.txt: Usernames like Joe.Schmoe
-- flast.txt:      Usernames like JSchmoe
-- firstl.txt:     Usernames like JoeS
-- rawnames.txt:   Full name like Joe Schmoe
 
 
 # Planned Enhancements
