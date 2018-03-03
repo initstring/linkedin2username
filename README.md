@@ -13,6 +13,13 @@ Here's what you get:
 - firstl.txt:     Usernames like JoeS
 - rawnames.txt:   Full name like Joe Schmoe
 
+# Example
+Here's an example to pull employees of Google:
+```
+$ python linkedin2username.py myname@email.com 1441
+```
+
+# Full Help
 ```
 usage: linkedin2username.py username company [-p PASSWORD] [-d DEPTH] [-s SLEEP]
 
