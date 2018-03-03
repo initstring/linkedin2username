@@ -130,7 +130,7 @@ def scrape_info(parser):
     for page in range(0, searchDepth):
         print('OK, looking for results on page ' + str(page+1))
         url = 'https://www.linkedin.com/search/results/people/?facetCurrentCompany=%5B%22'+companyID+'%22%5D&page=' + str(page+1)
-        if 'searchRegion' in globals:
+        if 'searchRegion' in globals():
             url = url + '&facetGeoRegion=%5B%22' + searchRegion.lower() + '%3A0%22%5D'
         result = parser.load_page(url)
         ########################## DEBUG #########################
