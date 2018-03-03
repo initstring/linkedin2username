@@ -21,12 +21,12 @@ $ python linkedin2username.py myname@email.com 1441 -d 100
 
 # Full Help
 ```
-usage: linkedin2username.py username company [-p PASSWORD] [-d DEPTH] [-s SLEEP]
+usage: linkedin2username.py username company [-p PASSWORD] [-d DEPTH] [-s SLEEP] [-r REGION]
 
 positional arguments:
   username              A valid LinkedIn username.
   company               Numerical company ID assigned by LinkedIn 
-                        (company employees and look at URL on website to find)
+                        (search company employees and look at URL on website to find)
 
 optional arguments:
   -h, --help            show this help message and exit
