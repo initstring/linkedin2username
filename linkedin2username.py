@@ -13,6 +13,10 @@ import argparse
 import getpass
 
 cookie_filename = "parser.cookies.txt"
+try:
+    os.remove(cookie_filename)
+except OSError:
+    pass
 
 class LinkedInParser(object):
 
@@ -37,9 +41,6 @@ class LinkedInParser(object):
 
         # Login
         self.login_page()
-
-        title = self.load_title()
-        print title
 
         self.cj.save()
 
@@ -102,12 +103,12 @@ username = args.username
 companyID = args.company
 
 if args.depth:
-    searchDepth = args.d
+    searchDepth = args.depth
 else:
     searchDepth = 5
 
 if args.sleep:
-    pageDelay = args.s
+    pageDelay = args.sleep
 else:
     pageDelay = 1
 
