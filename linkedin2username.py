@@ -155,6 +155,7 @@ def main():
     foundNames  = scrape_info(parser)
     cleanList = clean(foundNames)
     write_files(cleanList)
+    os.remove(cookie_filename)
     print('All done! Check out your lovely new files.')
 
 if __name__ == "__main__":
