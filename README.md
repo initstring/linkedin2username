@@ -14,9 +14,9 @@ Here's what you get:
 - rawnames.txt:   Full name like Joe Schmoe
 
 # Example
-Here's an example to pull employees of Google:
+Here's an example to pull 100 pages of employees of Google:
 ```
-$ python linkedin2username.py myname@email.com 1441
+$ python linkedin2username.py myname@email.com 1441 -d 100
 ```
 
 # Full Help
