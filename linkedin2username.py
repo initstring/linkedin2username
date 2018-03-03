@@ -9,14 +9,8 @@ import string
 from BeautifulSoup import BeautifulSoup
 import time
 import unicodedata
-
-#############################################
-username =    ""     # you username
-password =    ""     # your password
-companyID =   ""     # ID LinkedIn assigns to the target company
-searchDepth = 5      # number of results pages to crawl
-pageDelay =   1      # seconds to pause between loading pages
-#############################################
+import argparse
+import getpass
 
 cookie_filename = "parser.cookies.txt"
 
@@ -92,6 +86,38 @@ class LinkedInParser(object):
         soup = BeautifulSoup(html)
         return soup.find("title")
 
+
+# Handle arguments before moving on....
+parser = argparse.ArgumentParser()
+parser.add_argument("username", type=str, help="A valid LinkedIn username.", action='store')
+parser.add_argument("company", type=str, help="Numerical company ID assigned by LinkedIn", action='store')
+parser.add_argument("-p", "--password", type=str, help="Optionally specific password on \
+                     the command line. If not specified, will prompt and not display on screen.", action='store')
+parser.add_argument("-d", "--depth", type=int, help="Search depth. Defaults to 5 pages.", action='store')
+parser.add_argument("-s", "--sleep", type=int, help="Seconds to sleep between pages. \
+                     defaults to 1.", action='store')
+args = parser.parse_args()
+    
+username = args.username
+companyID = args.company
+
+if args.depth:
+    searchDepth = args.d
+else:
+    searchDepth = 5
+
+if args.sleep:
+    pageDelay = args.s
+else:
+    pageDelay = 1
+
+if args.password:
+    password = args.password
+else:
+    password = getpass.getpass()
+
+
+
 def scrape_info(parser):
     fullNameList = []
     print('Starting search....')
@@ -99,6 +125,10 @@ def scrape_info(parser):
         print('OK, looking for results on page ' + str(page+1))
         url = 'https://www.linkedin.com/search/results/people/?facetCurrentCompany=%5B%22'+companyID+'%22%5D&page=' + str(page+1)
         result = parser.load_page(url)
+        ########################## DEBUG #########################
+        #print result
+        #exit()
+        ########################## DEBUG #########################
         firstName = re.findall(r'firstName&quot;:&quot;(.*?)&', result)
         lastName = re.findall(r'lastName&quot;:&quot;(.*?)&', result)
         for first,last in zip(firstName,lastName):
