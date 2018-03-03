@@ -18,6 +18,9 @@ optional arguments:
                         Search depth. Defaults to 5 pages.
   -s SLEEP, --sleep SLEEP
                         Seconds to sleep between pages. defaults to 1
+  -r REGION, --region REGION
+                        Limit search to region. Try a country code like 'AU'
+                        or 'US' here.
 ```
 
 # Progress
@@ -35,7 +38,7 @@ It will create a few files in your local directory:
 - General error checking
 - A cool banner, of course
 - Adding nice comments (sorry, I was in a hurry!)
-- Adding additional filters (location, job title, etc)
+- Adding additional search filters (like job title)
 
 # Credits
 I'm a shit coder, but here are some better coders I ~~stole from~~ was inspired by:
