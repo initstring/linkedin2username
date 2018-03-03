@@ -1,12 +1,27 @@
 # linkedin2username
-OSINT Tool: Generate username lists from companies on LinkedIn
+OSINT Tool: Generate username lists from companies on LinkedIn.
+This is a pure web-scraper, no API key required.
+```
+usage: linkedin2username.py username company [-p PASSWORD] [-d DEPTH] [-s SLEEP]
+
+positional arguments:
+  username              A valid LinkedIn username.
+  company               Numerical company ID assigned by LinkedIn 
+                        (company employees and look at URL on website to find)
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -p PASSWORD, --password PASSWORD
+                        Optionally specific password on the command line. If
+                        not specified, will prompt and not display on screen.
+  -d DEPTH, --depth DEPTH
+                        Search depth. Defaults to 5 pages.
+  -s SLEEP, --sleep SLEEP
+                        Seconds to sleep between pages. defaults to 1
+```
 
 # Progress
-Not pretty, but it works. Works better if you use an account with a lot of contacts - some people have privacy settings to return their name as "LinkedIn Member" if you are not in their network.
-
-Currently it also pulls the names of mutual connections - I need to work through a bit of regex hell to fix that.
-
-Edit the file (in between the ############## sections) with your username and password, as well as the numerical identifier that LinkedIn assigns to companies. You can find it in the URL when you search for employees of a given company.
+I could use some help fixing the regex - right now, it will pull names of shared connections as well. Annoying but still works for my pentesting needs.
 
 It will create a few files in your local directory:
 - first.last.txt: Usernames like Joe.Schmoe
@@ -16,11 +31,11 @@ It will create a few files in your local directory:
 
 
 # Planned Enhancements
-- Pass arguments for username, password, and company
 - Automatically find and assign company ID
 - General error checking
 - A cool banner, of course
 - Adding nice comments (sorry, I was in a hurry!)
+- Adding additional filters (location, job title, etc)
 
 # Credits
 I'm a shit coder, but here are some better coders I ~~stole from~~ was inspired by:
