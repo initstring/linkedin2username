@@ -97,6 +97,8 @@ parser.add_argument("-p", "--password", type=str, help="Optionally specific pass
 parser.add_argument("-d", "--depth", type=int, help="Search depth. Defaults to 5 pages.", action='store')
 parser.add_argument("-s", "--sleep", type=int, help="Seconds to sleep between pages. \
                      defaults to 1.", action='store')
+parser.add_argument("-r", "--region", type=str, help="Limit search to region. Try a country code \
+                     like 'AU' or 'US' here.", action='store')
 args = parser.parse_args()
     
 username = args.username
@@ -112,6 +114,9 @@ if args.sleep:
 else:
     pageDelay = 1
 
+if args.region:
+    searchRegion = args.region
+
 if args.password:
     password = args.password
 else:
@@ -125,6 +130,8 @@ def scrape_info(parser):
     for page in range(0, searchDepth):
         print('OK, looking for results on page ' + str(page+1))
         url = 'https://www.linkedin.com/search/results/people/?facetCurrentCompany=%5B%22'+companyID+'%22%5D&page=' + str(page+1)
+        if searchRegion:
+            url = url + '&facetGeoRegion=%5B%22' + searchRegion.lower() + '%3A0%22%5D'
         result = parser.load_page(url)
         ########################## DEBUG #########################
         #print result
