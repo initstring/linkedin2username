@@ -144,7 +144,7 @@ def scrape_info(parser):
             if fullName not in fullNameList:
                 fullNameList.append(fullName)
         print('    [+] We have a total of ' + str(len(fullNameList)) + ' names so far...')
-        time.sleep(2)
+        time.sleep(pageDelay)
     return fullNameList
 
 def remove_accents(string):
