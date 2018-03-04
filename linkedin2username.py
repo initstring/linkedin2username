@@ -51,7 +51,11 @@ def login(username, password):
                    Version/4.0 Mobile Safari/533.1'
     session.headers.update({'User-Agent': mobileAgent})
     anonResponse = session.get('https://www.linkedin.com/')
-    loginCSRF = re.findall(r'name="loginCsrfParam".*?value="(.*?)"', anonResponse.text)[0]
+    try:
+        loginCSRF = re.findall(r'name="loginCsrfParam".*?value="(.*?)"', anonResponse.text)[0]
+    except:
+        print('Having trouble with loading the page... try the command again.')
+        exit()
 
     authPayload = {
         'session_key': username,
