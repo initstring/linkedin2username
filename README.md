@@ -12,10 +12,16 @@ Here's what you get:
 - rawnames.txt:   Full name like Joe Schmoe
 
 # Example
-Here's an example to pull 100 pages of employees of Google:
+Here's an example to pull 100 pages of employees of Uber:
 ```
-$ python linkedin2username.py myname@email.com 1441 -d 100
+$ python linkedin2username.py myname@email.com 361843 -d 100
 ```
+
+Here's how to get that company ID (I will automate this later):
+1. Log in to LinkedIn
+2. Find a comapny's overview page (ie https://www.linkedin.com/company/uber/)
+3. Hover over "See all xxx employees on LinkedIn"
+4. Look for the ID number in "facetCurrentCompany" in the URL. (Uber is 361843).
 
 # Full Help
 ```
