@@ -1,91 +1,13 @@
 # -*- coding: utf-8 -*-
 
-import cookielib
-import os
-import urllib
-import urllib2
 import re
 import string
-from BeautifulSoup import BeautifulSoup
 import time
 import unicodedata
 import argparse
 import getpass
-
-cookie_filename = "parser.cookies.txt"
-try:
-    os.remove(cookie_filename)
-except OSError:
-    pass
-
-class LinkedInParser(object):
-
-    def __init__(self, login, password):
-        """ Start up... """
-        self.login = login
-        self.password = password
-
-        # Simulate browser with cookies enabled
-        self.cj = cookielib.MozillaCookieJar(cookie_filename)
-        if os.access(cookie_filename, os.F_OK):
-            self.cj.load()
-        self.opener = urllib2.build_opener(
-            urllib2.HTTPRedirectHandler(),
-            urllib2.HTTPHandler(debuglevel=0),
-            urllib2.HTTPSHandler(debuglevel=0),
-            urllib2.HTTPCookieProcessor(self.cj)
-        )
-        self.opener.addheaders = [
-            ('User-agent', ('Mozilla/5.0 (X11; Linux x86_64; rv:58.0) Gecko/20100101 Firefox/58.0'))
-        ]
-
-        # Login
-        self.login_page()
-
-        self.cj.save()
-
-
-    def load_page(self, url, data=None):
-        """
-        Utility function to load HTML from URLs for us with hack to continue despite 404
-        """
-        # We'll print the url in case of infinite loop
-        print('Loading URL: %s' % url)
-        try:
-            if data is not None:
-                response = self.opener.open(url, data)
-            else:
-                response = self.opener.open(url)
-            return ''.join(response.readlines())
-        except:
-            # If URL doesn't load for ANY reason, try again...
-            # Quick and dirty solution for 404 returns because of network problems
-            # However, this could infinite loop if there's an actual problem
-            return self.load_page(url, data)
-
-    def login_page(self):
-        """
-        Handle login. This should populate our cookie jar.
-        """
-        html = self.load_page("https://www.linkedin.com/")
-        soup = BeautifulSoup(html)
-        try:
-            csrf = soup.find(id="loginCsrfParam-login")['value']
-        except:
-            csrf = ''
-        login_data = urllib.urlencode({
-            'session_key': self.login,
-            'session_password': self.password,
-            'loginCsrfParam': csrf,
-        })
-
-        html = self.load_page("https://www.linkedin.com/uas/login-submit", login_data)
-        return
-
-    def load_title(self):
-        html = self.load_page("https://www.linkedin.com/feed/")
-        soup = BeautifulSoup(html)
-        return soup.find("title")
+import requests
+import urllib
 
 
 # Handle arguments before moving on....
@@ -97,10 +19,8 @@ parser.add_argument("-p", "--password", type=str, help="Optionally specific pass
 parser.add_argument("-d", "--depth", type=int, help="Search depth. Defaults to 5 pages.", action='store')
 parser.add_argument("-s", "--sleep", type=int, help="Seconds to sleep between pages. \
                      defaults to 1.", action='store')
-parser.add_argument("-r", "--region", type=str, help="Limit search to region. Try a country code \
-                     like 'AU' or 'US' here.", action='store')
 args = parser.parse_args()
-    
+
 username = args.username
 companyID = args.company
 
@@ -114,31 +34,59 @@ if args.sleep:
 else:
     pageDelay = 1
 
-if args.region:
-    searchRegion = args.region
-
 if args.password:
     password = args.password
 else:
     password = getpass.getpass()
 
 
+def login(username, password):
+    session = requests.session()
+    mobileAgent = 'Mozilla/5.0 (Linux; U; Android 2.2; en-us; Droid Build/FRG22D) AppleWebKit/533.1 (KHTML, like Gecko) \
+                   Version/4.0 Mobile Safari/533.1'
+    session.headers.update({'User-Agent': mobileAgent})
+    anonResponse = session.get('https://www.linkedin.com/')
+    loginCSRF = re.findall(r'name="loginCsrfParam".*?value="(.*?)"', anonResponse.text)[0]
 
-def scrape_info(parser):
+    authPayload = {
+        'session_key': username,
+        'session_password': password,
+        'loginCsrfParam': loginCSRF
+        }
+
+    response = session.post('https://www.linkedin.com/uas/login-submit', data=authPayload)
+
+    if '<title>LinkedIn</title>' in response.text:
+        print('[+] Successfully logged in.')
+        return session
+    else:
+        print('[!] Could not log in!')
+        exit()
+
+def set_search_csrf(session):
+    # Search requires a CSRF token equal to the JSESSIONID.
+    jsession = (session.cookies['JSESSIONID'])
+    jsession = re.sub('"', '', jsession)
+    session.headers.update({'Csrf-Token': jsession})
+    return session
+
+def search_users(session, companyID, page):
+    url = 'https://linkedin.com/'
+    url += 'voyager/api/search/hits?count=10&guides=facetCurrentCompany-%3E'
+    url += companyID
+    url += '&origin=OTHER&q=guided&start='
+    url += str(page*10)
+    result = session.get(url)
+    return result.text
+
+def scrape_info(session):
     fullNameList = []
-    print('Starting search....')
+    print('[+] Starting search....')
     for page in range(0, searchDepth):
-        print('OK, looking for results on page ' + str(page+1))
-        url = 'https://www.linkedin.com/search/results/people/?facetCurrentCompany=%5B%22'+companyID+'%22%5D&page=' + str(page+1)
-        if 'searchRegion' in globals():
-            url = url + '&facetGeoRegion=%5B%22' + searchRegion.lower() + '%3A0%22%5D'
-        result = parser.load_page(url)
-        ########################## DEBUG #########################
-        #print result
-        #exit()
-        ########################## DEBUG #########################
-        firstName = re.findall(r'firstName&quot;:&quot;(.*?)&', result)
-        lastName = re.findall(r'lastName&quot;:&quot;(.*?)&', result)
+        print('[+] OK, looking for results on page ' + str(page+1))
+        result = search_users(session, companyID, page)
+        firstName = re.findall(r'"firstName":"(.*?)"', result)
+        lastName = re.findall(r'"lastName":"(.*?)"', result)
         for first,last in zip(firstName,lastName):
             fullName = first + ' ' + last
             if fullName not in fullNameList:
@@ -172,7 +120,7 @@ def clean(list):
         if name not in cleanList:
             cleanList.append(name)
     return cleanList
-        
+
 def write_files(list):
     rawnames = open('rawnames.txt', 'w')
     flast = open('flast.txt', 'w')
@@ -186,14 +134,14 @@ def write_files(list):
             firstlast.write(parse[0] + '.' + parse[-1] + '\n')
             firstl.write(parse[0] + parse[-1][0] + '\n')
         except:
-            print('Choked on ' + name + ' but continuing...')
+            print('[-] Choked on ' + name + ' but continuing...')
 
 def main():
-    parser = LinkedInParser(username, password)
-    foundNames  = scrape_info(parser)
+    session = login(username, password)
+    session = set_search_csrf(session)
+    foundNames  = scrape_info(session)
     cleanList = clean(foundNames)
     write_files(cleanList)
-    os.remove(cookie_filename)
     print('All done! Check out your lovely new files.')
 
 if __name__ == "__main__":
