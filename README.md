@@ -12,9 +12,9 @@ Here's what you get:
 - rawnames.txt:   Full name like Joe Schmoe
 
 # Example
-Here's an example to pull 100 pages of employees of Uber:
+Here's an example to pull all employees of Uber:
 ```
-$ python linkedin2username.py myname@email.com 361843 -d 100
+$ python linkedin2username.py myname@email.com 361843
 ```
 
 Here's how to get that company ID (I will automate this later):
@@ -38,7 +38,7 @@ optional arguments:
                         Optionally specific password on the command line. If
                         not specified, will prompt and not display on screen.
   -d DEPTH, --depth DEPTH
-                        Search depth. Defaults to 1000 pages or end of search.
+                        Search depth. If unset, will try to grab them all.
   -s SLEEP, --sleep SLEEP
-                        Seconds to sleep between pages. defaults to 1
+                        Seconds to sleep between pages. defaults to 3
 ```

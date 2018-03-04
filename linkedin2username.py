@@ -8,6 +8,7 @@ import argparse
 import getpass
 import requests
 import urllib
+import math
 
 
 # Handle arguments before moving on....
@@ -16,9 +17,9 @@ parser.add_argument("username", type=str, help="A valid LinkedIn username.", act
 parser.add_argument("company", type=str, help="Numerical company ID assigned by LinkedIn", action='store')
 parser.add_argument("-p", "--password", type=str, help="Optionally specific password on \
                      the command line. If not specified, will prompt and not display on screen.", action='store')
-parser.add_argument("-d", "--depth", type=int, help="Search depth. Defaults to 1000 pages or end of list.", action='store')
+parser.add_argument("-d", "--depth", type=int, help="Search depth. If unset, will try to grab them all.", action='store')
 parser.add_argument("-s", "--sleep", type=int, help="Seconds to sleep between pages. \
-                     defaults to 1.", action='store')
+                     defaults to 3.", action='store')
 args = parser.parse_args()
 
 username = args.username
@@ -27,12 +28,12 @@ companyID = args.company
 if args.depth:
     searchDepth = args.depth
 else:
-    searchDepth = 1000
+    searchDepth = ''
 
 if args.sleep:
     pageDelay = args.sleep
 else:
-    pageDelay = 1
+    pageDelay = 3
 
 if args.password:
     password = args.password
@@ -70,9 +71,21 @@ def set_search_csrf(session):
     session.headers.update({'Csrf-Token': jsession})
     return session
 
-def search_users(session, companyID, page):
+def get_total_count(result):
+    global searchDepth
+    totalCount = int(re.findall(r'totalResultCount":(.*?),', result)[0])
+    print('[+] Company has ' + str(totalCount) + ' profiles to check. Some may be anonymous.')
+    loops = int((totalCount / 25) + 1)
+    if searchDepth != '' and searchDepth < loops:
+        print('[!] You defined a low custom search depth, so we might not get them all.')
+    else:
+        print('[+] Setting search to ' + str(loops) + ' loops of 25 results each.')
+        searchDepth = loops
+    return searchDepth
+
+def get_results(session, companyID, page):
     url = 'https://linkedin.com/'
-    url += 'voyager/api/search/hits?count=10&guides=facetCurrentCompany-%3E'
+    url += 'voyager/api/search/hits?count=25&guides=facetCurrentCompany-%3E'
     url += companyID
     url += '&origin=OTHER&q=guided&start='
     url += str(page*10)
@@ -82,9 +95,11 @@ def search_users(session, companyID, page):
 def scrape_info(session):
     fullNameList = []
     print('[+] Starting search....')
+    get_total_count(get_results(session, companyID, 1))
     for page in range(0, searchDepth):
-        print('[+] OK, looking for results on page ' + str(page+1))
-        result = search_users(session, companyID, page)
+        newNames = 0
+        print('[+] OK, looking for results on loop numer ' + str(page+1))
+        result = get_results(session, companyID, page)
         firstName = re.findall(r'"firstName":"(.*?)"', result)
         lastName = re.findall(r'"lastName":"(.*?)"', result)
         if len(firstName) == 0 and len(lastName) == 0:
@@ -94,7 +109,8 @@ def scrape_info(session):
             fullName = first + ' ' + last
             if fullName not in fullNameList:
                 fullNameList.append(fullName)
-        print('    [+] We have a total of ' + str(len(fullNameList)) + ' names so far...')
+                newNames +=1
+        print('    [+] Added ' + str(newNames) + 'new names.')
         time.sleep(pageDelay)
     return fullNameList
 
