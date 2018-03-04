@@ -81,6 +81,7 @@ def get_total_count(result):
     else:
         print('[+] Setting search to ' + str(loops) + ' loops of 25 results each.')
         searchDepth = loops
+    print('\n\n')
     return searchDepth
 
 def get_results(session, companyID, page):
@@ -88,13 +89,13 @@ def get_results(session, companyID, page):
     url += 'voyager/api/search/hits?count=25&guides=facetCurrentCompany-%3E'
     url += companyID
     url += '&origin=OTHER&q=guided&start='
-    url += str(page*10)
+    url += str(page*25)
     result = session.get(url)
     return result.text
 
 def scrape_info(session):
     fullNameList = []
-    print('[+] Starting search....')
+    print('[+] Starting search....\n')
     get_total_count(get_results(session, companyID, 1))
     for page in range(0, searchDepth):
         newNames = 0
@@ -110,7 +111,7 @@ def scrape_info(session):
             if fullName not in fullNameList:
                 fullNameList.append(fullName)
                 newNames +=1
-        print('    [+] Added ' + str(newNames) + 'new names.')
+        print('    [+] Added ' + str(newNames) + ' new names.')
         time.sleep(pageDelay)
     return fullNameList
 
@@ -155,13 +156,26 @@ def write_files(list):
         except:
             continue
 
+def print_banner():
+    print('                            .__  .__________                     ')
+    print('                            |  | |__\_____  \ __ __              ')
+    print('                            |  | |  |/  ____/|  |  \             ')
+    print('                            |  |_|  /       \|  |  /             ')
+    print('                            |____/__\_______ \____/              ')
+    print('                               linkedin2username                 ')
+    print('                                                                 ')
+    print('                 Thanks to all the smart people on StackOverflow.')
+    print('                        I hope you get in. - initstring          ')
+    print('\n\n\n')
+
 def main():
+    print_banner()
     session = login(username, password)
     session = set_search_csrf(session)
     foundNames  = scrape_info(session)
     cleanList = clean(foundNames)
     write_files(cleanList)
-    print('All done! Check out your lovely new files.')
+    print('\n\nAll done! Check out your lovely new files.')
 
 if __name__ == "__main__":
     main()
