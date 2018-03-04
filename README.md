@@ -36,14 +36,3 @@ optional arguments:
   -s SLEEP, --sleep SLEEP
                         Seconds to sleep between pages. defaults to 1
 ```
-
-# Progress
-Finally fixed the issue where it would grab mutual connections. Sending a mobile user agents gives an easier to parse response, so this is what the script does now.
-
-
-# Planned Enhancements
-- Automatically find and assign company ID
-- General error checking
-- A cool banner, of course
-- Adding nice comments (sorry, I was in a hurry!)
-- Adding additional search filters (like job title)
