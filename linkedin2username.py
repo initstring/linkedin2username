@@ -16,7 +16,7 @@ parser.add_argument("username", type=str, help="A valid LinkedIn username.", act
 parser.add_argument("company", type=str, help="Numerical company ID assigned by LinkedIn", action='store')
 parser.add_argument("-p", "--password", type=str, help="Optionally specific password on \
                      the command line. If not specified, will prompt and not display on screen.", action='store')
-parser.add_argument("-d", "--depth", type=int, help="Search depth. Defaults to 5 pages.", action='store')
+parser.add_argument("-d", "--depth", type=int, help="Search depth. Defaults to 1000 pages or end of list.", action='store')
 parser.add_argument("-s", "--sleep", type=int, help="Seconds to sleep between pages. \
                      defaults to 1.", action='store')
 args = parser.parse_args()
@@ -27,7 +27,7 @@ companyID = args.company
 if args.depth:
     searchDepth = args.depth
 else:
-    searchDepth = 5
+    searchDepth = 1000
 
 if args.sleep:
     pageDelay = args.sleep
@@ -87,6 +87,9 @@ def scrape_info(session):
         result = search_users(session, companyID, page)
         firstName = re.findall(r'"firstName":"(.*?)"', result)
         lastName = re.findall(r'"lastName":"(.*?)"', result)
+        if len(firstName) == 0 and len(lastName) == 0:
+            print('[+] We have hit the end of the road! Moving on...')
+            break
         for first,last in zip(firstName,lastName):
             fullName = first + ' ' + last
             if fullName not in fullNameList:
@@ -134,7 +137,7 @@ def write_files(list):
             firstlast.write(parse[0] + '.' + parse[-1] + '\n')
             firstl.write(parse[0] + parse[-1][0] + '\n')
         except:
-            print('[-] Choked on ' + name + ' but continuing...')
+            continue
 
 def main():
     session = login(username, password)

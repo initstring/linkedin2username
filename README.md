@@ -23,7 +23,7 @@ usage: linkedin2username.py username company [-p PASSWORD] [-d DEPTH] [-s SLEEP]
 
 positional arguments:
   username              A valid LinkedIn username.
-  company               Numerical company ID assigned by LinkedIn 
+  company               Numerical company ID assigned by LinkedIn
                         (search company employees and look at URL on website to find)
 
 optional arguments:
@@ -32,7 +32,7 @@ optional arguments:
                         Optionally specific password on the command line. If
                         not specified, will prompt and not display on screen.
   -d DEPTH, --depth DEPTH
-                        Search depth. Defaults to 5 pages.
+                        Search depth. Defaults to 1000 pages or end of search.
   -s SLEEP, --sleep SLEEP
                         Seconds to sleep between pages. defaults to 1
 ```
