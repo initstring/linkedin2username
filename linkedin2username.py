@@ -8,8 +8,12 @@ import argparse
 import getpass
 import requests
 import urllib
-import math
+import sys
 
+# Check version requirement
+if sys.version_info[0] >= 3:
+    print("Sorry, Python 2 only for now...")
+    exit()
 
 # Handle arguments before moving on....
 parser = argparse.ArgumentParser()
