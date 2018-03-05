@@ -151,7 +151,7 @@ def remove_accents(string):
     string = re.sub(u"[òóôõö]", 'o', string)
     string = re.sub(u"[ùúûü]", 'u', string)
     string = re.sub(u"[ýÿ]", 'y', string)
-    string = re.sub(u"[ß]", 'b', string)
+    string = re.sub(u"[ß]", 'ss', string)
     return string
 
 def clean(list):
