@@ -10,6 +10,17 @@ import requests
 import urllib
 import sys
 
+BANNER="""
+                            .__  .__________
+                            |  | |__\_____  \ __ __
+                            |  | |  |/  ____/|  |  \
+                            |  |_|  /       \|  |  /
+                            |____/__\_______ \____/
+                               linkedin2username
+
+                 Thanks to all the smart people on StackOverflow.
+                        I hope you get in. - initstring\n\n\n\n"""
+
 # Check version requirement
 if sys.version_info[0] >= 3:
     print("Sorry, Python 2 only for now...")
@@ -28,21 +39,9 @@ args = parser.parse_args()
 
 username = args.username
 company = args.company
-
-if args.depth:
-    searchDepth = args.depth
-else:
-    searchDepth = ''
-
-if args.sleep:
-    pageDelay = args.sleep
-else:
-    pageDelay = 3
-
-if args.password:
-    password = args.password
-else:
-    password = getpass.getpass()
+searchDepth = args.depth or ''
+pageDelay = args.sleep or 3
+password = args.password or getpass.getpass()
 
 
 def login(username, password):
@@ -90,9 +89,7 @@ def get_company_info(name, session):
 
 def set_search_csrf(session):
     # Search requires a CSRF token equal to the JSESSIONID.
-    jsession = (session.cookies['JSESSIONID'])
-    jsession = re.sub('"', '', jsession)
-    session.headers.update({'Csrf-Token': jsession})
+    session.headers.update({'Csrf-Token': session.cookies['JSESSIONID'].replace('"', '')})
     return session
 
 def get_total_count(result):
@@ -140,8 +137,11 @@ def scrape_info(session, companyID):
     return fullNameList
 
 def remove_accents(string):
-    if type(string) is not unicode:
-        string = unicode(string, encoding='utf-8')
+    try:               # Python 2
+        if not isinstance(string, unicode)
+            string = unicode(string, encoding='utf-8')
+    except NameError:  # Python 3
+        pass
 
     string = re.sub(u"[àáâãäå]", 'a', string)
     string = re.sub(u"[èéêë]", 'e', string)
@@ -174,26 +174,17 @@ def write_files(list):
         try:
             rawnames.write(name + '\n')
             parse = name.split(' ')
-            flast.write(parse[0][0] + parse[-1] + '\n')
-            firstlast.write(parse[0] + '.' + parse[-1] + '\n')
-            firstl.write(parse[0] + parse[-1][0] + '\n')
-        except:
+            first, last = parse[0], parse[-1]
+            flast.write(first[0] + last + '\n')
+            firstlast.write(first + '.' + last + '\n')
+            firstl.write(first + last[0] + '\n')
+        except Exception:
             continue
-
-def print_banner():
-    print('                            .__  .__________                     ')
-    print('                            |  | |__\_____  \ __ __              ')
-    print('                            |  | |  |/  ____/|  |  \             ')
-    print('                            |  |_|  /       \|  |  /             ')
-    print('                            |____/__\_______ \____/              ')
-    print('                               linkedin2username                 ')
-    print('                                                                 ')
-    print('                 Thanks to all the smart people on StackOverflow.')
-    print('                        I hope you get in. - initstring          ')
-    print('\n\n\n')
+    for f in (rawnames, flast, firstl, firstlast):
+        f.close()
 
 def main():
-    print_banner()
+    print(BANNER)
     session = login(username, password)
     session = set_search_csrf(session)
     companyID = get_company_info(company, session)
