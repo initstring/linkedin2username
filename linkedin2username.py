@@ -18,7 +18,7 @@ if sys.version_info[0] >= 3:
 # Handle arguments before moving on....
 parser = argparse.ArgumentParser()
 parser.add_argument("username", type=str, help="A valid LinkedIn username.", action='store')
-parser.add_argument("company", type=str, help="Numerical company ID assigned by LinkedIn", action='store')
+parser.add_argument("company", type=str, help="Company name.", action='store')
 parser.add_argument("-p", "--password", type=str, help="Optionally specific password on \
                      the command line. If not specified, will prompt and not display on screen.", action='store')
 parser.add_argument("-d", "--depth", type=int, help="Search depth. If unset, will try to grab them all.", action='store')
@@ -27,7 +27,7 @@ parser.add_argument("-s", "--sleep", type=int, help="Seconds to sleep between pa
 args = parser.parse_args()
 
 username = args.username
-companyID = args.company
+company = args.company
 
 if args.depth:
     searchDepth = args.depth
@@ -72,6 +72,24 @@ def login(username, password):
         print('[!] Could not log in!')
         exit()
 
+def get_company_info(name, session):
+    response = session.get('https://linkedin.com/company/' + name)
+    try:
+        foundID = re.findall(r'normalized_company:(.*?)[&,]', response.text)[0]             # response can vary
+        foundName = re.findall(r'companyUniversalName.*?3D(.*?)"', response.text)[0]
+        foundDesc = re.findall(r'localizedName&quot;:&quot;(.*?)&quot', response.text)[0]
+        foundGeo = re.findall(r'geographicArea&quot;:&quot;(.*?)&quot', response.text)[0]
+        print('\n')
+        print('          [+] Found: ' + foundName)
+        print('          [+] ID:    ' + foundID)
+        print('          [+] Desc:  ' + foundDesc)
+        print('          [+] Geo:   ' + foundGeo)
+        print('\n[+] Hopefully that\'s the right ' + name + '! If not, double-check LinkedIn and try again.\n')
+        return(foundID)
+    except:
+        print('[!] Could not find that company name. Please double-check LinkedIn and try again.')
+        exit()
+
 def set_search_csrf(session):
     # Search requires a CSRF token equal to the JSESSIONID.
     jsession = (session.cookies['JSESSIONID'])
@@ -101,7 +119,7 @@ def get_results(session, companyID, page):
     result = session.get(url)
     return result.text
 
-def scrape_info(session):
+def scrape_info(session, companyID):
     fullNameList = []
     print('[+] Starting search....\n')
     get_total_count(get_results(session, companyID, 1))
@@ -180,7 +198,8 @@ def main():
     print_banner()
     session = login(username, password)
     session = set_search_csrf(session)
-    foundNames  = scrape_info(session)
+    companyID = get_company_info(company, session)
+    foundNames  = scrape_info(session, companyID)
     cleanList = clean(foundNames)
     write_files(cleanList)
     print('\n\nAll done! Check out your lovely new files.')

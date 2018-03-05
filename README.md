@@ -14,14 +14,8 @@ Here's what you get:
 # Example
 Here's an example to pull all employees of Uber:
 ```
-$ python linkedin2username.py myname@email.com 361843
+$ python linkedin2username.py myname@email.com uber-com
 ```
-
-Here's how to get that company ID (I will automate this later):
-1. Log in to LinkedIn
-2. Find a comapny's overview page (ie https://www.linkedin.com/company/uber/)
-3. Hover over "See all xxx employees on LinkedIn"
-4. Look for the ID number in "facetCurrentCompany" in the URL. (Uber is 361843).
 
 # Full Help
 ```
@@ -29,8 +23,7 @@ usage: linkedin2username.py username company [-p PASSWORD] [-d DEPTH] [-s SLEEP]
 
 positional arguments:
   username              A valid LinkedIn username.
-  company               Numerical company ID assigned by LinkedIn
-                        (search company employees and look at URL on website to find)
+  company               Company name.
 
 optional arguments:
   -h, --help            show this help message and exit
