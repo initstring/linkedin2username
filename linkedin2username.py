@@ -28,21 +28,9 @@ args = parser.parse_args()
 
 username = args.username
 company = args.company
-
-if args.depth:
-    searchDepth = args.depth
-else:
-    searchDepth = ''
-
-if args.sleep:
-    pageDelay = args.sleep
-else:
-    pageDelay = 3
-
-if args.password:
-    password = args.password
-else:
-    password = getpass.getpass()
+searchDepth = args.depth or ''
+pageDelay = args.sleep or 3
+password = args.password or getpass.getpass()
 
 
 def login(username, password):
@@ -140,8 +128,11 @@ def scrape_info(session, companyID):
     return fullNameList
 
 def remove_accents(string):
-    if type(string) is not unicode:
-        string = unicode(string, encoding='utf-8')
+    try:               # Python 2
+        if not isinstance(string, unicode)
+            string = unicode(string, encoding='utf-8')
+    except NameError:  # Python 3
+        pass
 
     string = re.sub(u"[àáâãäå]", 'a', string)
     string = re.sub(u"[èéêë]", 'e', string)
