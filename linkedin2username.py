@@ -76,19 +76,17 @@ def get_company_info(name, session):
     response = session.get('https://linkedin.com/company/' + name)
     try:
         foundID = re.findall(r'normalized_company:(.*?)[&,]', response.text)[0]             # response can vary
-        foundName = re.findall(r'companyUniversalName.*?3D(.*?)"', response.text)[0]
-        foundDesc = re.findall(r'localizedName&quot;:&quot;(.*?)&quot', response.text)[0]
-        foundGeo = re.findall(r'geographicArea&quot;:&quot;(.*?)&quot', response.text)[0]
-        print('\n')
-        print('          [+] Found: ' + foundName)
-        print('          [+] ID:    ' + foundID)
-        print('          [+] Desc:  ' + foundDesc)
-        print('          [+] Geo:   ' + foundGeo)
-        print('\n[+] Hopefully that\'s the right ' + name + '! If not, double-check LinkedIn and try again.\n')
-        return(foundID)
     except:
         print('[!] Could not find that company name. Please double-check LinkedIn and try again.')
         exit()
+    foundName = re.findall(r'companyUniversalName.*?3D(.*?)"', response.text)[0]
+    foundDesc = re.findall(r'localizedName&quot;:&quot;(.*?)&quot', response.text)[0]
+    print('\n')
+    print('          [+] Found: ' + foundName)
+    print('          [+] ID:    ' + foundID)
+    print('          [+] Desc:  ' + foundDesc)
+    print('\n[+] Hopefully that\'s the right ' + name + '! If not, double-check LinkedIn and try again.\n')
+    return(foundID)
 
 def set_search_csrf(session):
     # Search requires a CSRF token equal to the JSESSIONID.
