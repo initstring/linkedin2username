@@ -48,3 +48,6 @@ optional arguments:
   -s SLEEP, --sleep SLEEP
                         Seconds to sleep between pages. defaults to 3.
 ```
+
+# Toubleshooting
+Sometimes LinkedIn does weird stuff or returns weird results. Sometimes it doesn't like you logging in from new locations. If something looks off, run the tool once or twice more. If it still isn't working, please open an issue.
