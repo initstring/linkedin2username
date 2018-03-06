@@ -22,6 +22,7 @@ $ python linkedin2username.py myname@email.com uber-com
 Here's an example to pull a shorter list and append the domain name @uber.com to them:
 ```
 $ python linkedin2username.py myname@email.com uber-com -d 5 -n 'uber.com'
+```
 
 # Full Help
 ```
