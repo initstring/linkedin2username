@@ -14,6 +14,8 @@ Here's what you get:
 Optionally, the tool will append @domain.xxx to the usernames.
 
 # Example
+You'll need to provide the tool with LinkedIn's company name. You can find that by looking at the URL for the company's page. It should look something like `https://linkedin.com/company/uber-com`. It may or may not be as simple as the exact name of the company.
+
 Here's an example to pull all employees of Uber:
 ```
 $ python linkedin2username.py myname@email.com uber-com
