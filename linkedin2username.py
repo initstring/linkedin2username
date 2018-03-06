@@ -13,32 +13,37 @@ import sys
 BANNER="""
                             .__  .__________
                             |  | |__\_____  \ __ __
-                            |  | |  |/  ____/|  |  \
+                            |  | |  |/  ____/|  |  \\
                             |  |_|  /       \|  |  /
                             |____/__\_______ \____/
                                linkedin2username
-
                  Thanks to all the smart people on StackOverflow.
                         I hope you get in. - initstring\n\n\n\n"""
 
 # Check version requirement
 if sys.version_info[0] >= 3:
-    print("Sorry, Python 2 only for now...")
+    print('Sorry, Python 2 only for now...')
     exit()
 
 # Handle arguments before moving on....
 parser = argparse.ArgumentParser()
-parser.add_argument("username", type=str, help="A valid LinkedIn username.", action='store')
-parser.add_argument("company", type=str, help="Company name.", action='store')
-parser.add_argument("-p", "--password", type=str, help="Optionally specific password on \
-                     the command line. If not specified, will prompt and not display on screen.", action='store')
-parser.add_argument("-d", "--depth", type=int, help="Search depth. If unset, will try to grab them all.", action='store')
-parser.add_argument("-s", "--sleep", type=int, help="Seconds to sleep between pages. \
-                     defaults to 3.", action='store')
+parser.add_argument('username', type=str, help='A valid LinkedIn username.', action='store')
+parser.add_argument('company', type=str, help='Company name.', action='store')
+parser.add_argument('-p', '--password', type=str, help='Specify your password on in clear-text on \
+                     the command line. If not specified, will prompt and not display on screen.', action='store')
+parser.add_argument('-n', '--domain', type=str, help='Append a domain name to username output. \
+                     [example: "-n uber.com" would ouput jschmoe@uber.com]', action='store')
+parser.add_argument('-d', '--depth', type=int, help='Search depth. If unset, will try to grab them all.', action='store')
+parser.add_argument('-s', '--sleep', type=int, help='Seconds to sleep between pages. \
+                     defaults to 3.', action='store')
 args = parser.parse_args()
 
 username = args.username
 company = args.company
+if args.domain:
+    domain = '@' + args.domain
+else:
+    domain = ''
 searchDepth = args.depth or ''
 pageDelay = args.sleep or 3
 password = args.password or getpass.getpass()
@@ -150,14 +155,15 @@ def remove_accents(string):
     string = re.sub(u"[ùúûü]", 'u', string)
     string = re.sub(u"[ýÿ]", 'y', string)
     string = re.sub(u"[ß]", 'ss', string)
+    string = re.sub(u"[ñ]", 'n', string)
     return string
 
 def clean(list):
     cleanList = []
     ascii = set(string.printable)
     for name in list:
-        name = re.sub(r'[,(].*', '', name) # People have a habit of listing lame creds after their name. Gone!
-        name = re.sub(r'\.', '', name)
+        name = re.sub(r'[,(/].*', '', name) # People have a habit of listing lame creds after their name. Gone!
+        name = re.sub(r'[\.\']', '', name)  # Getting rid of dots and slashes, while preserving text around them.
         name = remove_accents(name)
         name = filter(lambda x: x in ascii, name) # gets rid of any special characters we missed.
         name = name.strip()
@@ -173,11 +179,24 @@ def write_files(list):
     for name in list:
         try:
             rawnames.write(name + '\n')
-            parse = name.split(' ')
-            first, last = parse[0], parse[-1]
-            flast.write(first[0] + last + '\n')
-            firstlast.write(first + '.' + last + '\n')
-            firstl.write(first + last[0] + '\n')
+            parse = re.split(' |-', name)         # Split the name on spaces and hyphens
+            
+            # Users with hyphenated or multiple last names could have several variations on the username.
+            # For a best-effort, we will try using one or the other, but not both. Users with more than three
+            # names will be truncated down, assuming the second of four is a middle name.
+            if len(parse) > 2:              # this is for users with more than one last name.
+               first, second, third = parse[0], parse[-2], parse[-1]
+               flast.write(first[0] + second + domain + '\n')
+               flast.write(first[0] + third + domain + '\n')
+               firstlast.write(first + '.' + second + domain + '\n')
+               firstlast.write(first + '.' + third + domain + '\n')
+               firstl.write(first + second[0] + domain + '\n')
+               firstl.write(first + third[0] + domain + '\n')
+            else:                           # this is for users with only one last name
+                first, last = parse[0], parse[-1]
+                flast.write(first[0] + last + domain + '\n')
+                firstlast.write(first + '.' + last + domain + '\n')
+                firstl.write(first + last[0] + domain + '\n')
         except Exception:
             continue
     for f in (rawnames, flast, firstl, firstlast):

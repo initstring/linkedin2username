@@ -11,15 +11,23 @@ Here's what you get:
 - firstl.txt:     Usernames like JoeS
 - rawnames.txt:   Full name like Joe Schmoe
 
+Optionally, the tool will append @domain.xxx to the usernames.
+
 # Example
 Here's an example to pull all employees of Uber:
 ```
 $ python linkedin2username.py myname@email.com uber-com
 ```
 
+Here's an example to pull a shorter list and append the domain name @uber.com to them:
+```
+$ python linkedin2username.py myname@email.com uber-com -d 5 -n 'uber.com'
+
 # Full Help
 ```
-usage: linkedin2username.py username company [-p PASSWORD] [-d DEPTH] [-s SLEEP]
+usage: linkedin2username.py [-h] [-p PASSWORD] [-n DOMAIN] [-d DEPTH]
+                            [-s SLEEP]
+                            username company
 
 positional arguments:
   username              A valid LinkedIn username.
@@ -28,10 +36,14 @@ positional arguments:
 optional arguments:
   -h, --help            show this help message and exit
   -p PASSWORD, --password PASSWORD
-                        Optionally specific password on the command line. If
-                        not specified, will prompt and not display on screen.
+                        Specify your password on in clear-text on the command
+                        line. If not specified, will prompt and not display on
+                        screen.
+  -n DOMAIN, --domain DOMAIN
+                        Append a domain name to username output. [example: '-n
+                        uber.com' would ouput jschmoe@uber.com]
   -d DEPTH, --depth DEPTH
                         Search depth. If unset, will try to grab them all.
   -s SLEEP, --sleep SLEEP
-                        Seconds to sleep between pages. defaults to 3
+                        Seconds to sleep between pages. defaults to 3.
 ```
