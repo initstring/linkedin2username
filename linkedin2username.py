@@ -138,7 +138,7 @@ def scrape_info(session, companyID):
 
 def remove_accents(string):
     try:               # Python 2
-        if not isinstance(string, unicode)
+        if not isinstance(string, unicode):
             string = unicode(string, encoding='utf-8')
     except NameError:  # Python 3
         pass
