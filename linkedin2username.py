@@ -150,6 +150,7 @@ def remove_accents(string):
     string = re.sub(u"[ùúûü]", 'u', string)
     string = re.sub(u"[ýÿ]", 'y', string)
     string = re.sub(u"[ß]", 'ss', string)
+    string = re.sub(u"[ñ]", 'n', string)
     return string
 
 def clean(list):
@@ -174,10 +175,13 @@ def write_files(list):
         try:
             rawnames.write(name + '\n')
             parse = name.split(' ')
-            first, last = parse[0], parse[-1]
-            flast.write(first[0] + last + '\n')
-            firstlast.write(first + '.' + last + '\n')
-            firstl.write(first + last[0] + '\n')
+            first, last = parse[0], parse[1:]
+            flast.write(first[0] + ''.join(last) + '\n')
+            firstlast.write(first + '.'.join(last) + '\n')
+            lastn = ''
+            for str in last:
+                lastn += str[0]
+            firstl.write(first + lastn + '\n')
         except Exception:
             continue
     for f in (rawnames, flast, firstl, firstlast):
