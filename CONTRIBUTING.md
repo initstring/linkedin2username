@@ -1,7 +1,7 @@
 # Contributing Guidelines
 Thank you so much for thinking about contributing!
 
-There are a few ways you can help, if your're so inclined:
+There are a few ways you can help, if you're so inclined:
 - Open up an issue on here if you notice something odd.
 - Submit a feature request if you think the tool should be doing something additional.
 - Submit bug fixes or streamlime the existing code.
