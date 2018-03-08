@@ -8,6 +8,6 @@ There are a few ways you can help, if you're so inclined:
 
 I'd like to keep the tool pretty straightforward, so that it does one thing and does it well.
 
-Before you spend a lot of time re-writing something massive, it might be worth contacting me first just to make sure I'm not in the middle of a conflicting re-write.
+Before you spend a lot of time re-writing something massive, it might be worth contacting me first just to make sure I'm not in the middle of a conflicting re-write. You can open an issue or try me at protonmail.
 
 Thanks for reading!
