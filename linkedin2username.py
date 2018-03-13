@@ -69,7 +69,7 @@ def login(username, password):
 
     response = session.post('https://www.linkedin.com/uas/login-submit', data=authPayload)
 
-    if '<title>LinkedIn</title>' in response.text:
+    if '<title>Feed | LinkedIn</title>' in response.text:
         print('[+] Successfully logged in.')
         return session
     else:
