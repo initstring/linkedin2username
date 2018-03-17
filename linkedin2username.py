@@ -72,7 +72,13 @@ def login(username, password):
     if '<title>LinkedIn</title>' in response.text:
         print('[+] Successfully logged in.')
         return session
+    elif '<title>Sign-In Verification</title>' in response.text:
+        print('[!] LinkedIn doesn\'t like something about this login. Maybe you\'re being sneaky on a VPN or')
+        print('    something. You may get an email with a verification token. You can ignore that.')
+        print('    To fix this, try logging in with the same account in your browser first, then try this tool again.')
+        exit()
     else:
+        print(response.text)
         print('[!] Could not log in!')
         exit()
 
