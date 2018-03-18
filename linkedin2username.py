@@ -9,6 +9,7 @@ import getpass
 import requests
 import urllib
 import sys
+import os
 
 BANNER="""
                             .__  .__________
@@ -166,22 +167,24 @@ def remove_accents(string):
 
 def clean(list):
     cleanList = []
-    ascii = set(string.printable)
+    allowedChars = re.compile('[^a-zA-Z ]')
     for name in list:
-        name = re.sub(r'[,(/].*', '', name) # People have a habit of listing lame creds after their name. Gone!
+        name = re.sub(r'[,(/:].*', '', name) # People have a habit of listing lame creds after their name. Gone!
         name = re.sub(r'[\.\']', '', name)  # Getting rid of dots and slashes, while preserving text around them.
         name = remove_accents(name)
-        name = filter(lambda x: x in ascii, name) # gets rid of any special characters we missed.
-        name = name.strip()
+        name = allowedChars.sub('',name)    # Gets rid of any remaining special characters in the name
         if name not in cleanList:
             cleanList.append(name)
     return cleanList
 
-def write_files(list):
-    rawnames = open('rawnames.txt', 'w')
-    flast = open('flast.txt', 'w')
-    firstl = open('firstl.txt', 'w')
-    firstlast = open('first.last.txt', 'w')
+def write_files(company, list):
+    dir = 'li2u-output'
+    if not os.path.exists(dir):
+            os.makedirs(dir)
+    rawnames = open(dir + '/' + company + '-rawnames.txt', 'w')
+    flast = open(dir + '/' + company + '-flast.txt', 'w')
+    firstl = open(dir + '/' + company + '-firstl.txt', 'w')
+    firstlast = open(dir + '/' + company + '-first.last.txt', 'w')
     for name in list:
         try:
             rawnames.write(name + '\n')
@@ -215,8 +218,8 @@ def main():
     companyID = get_company_info(company, session)
     foundNames  = scrape_info(session, companyID)
     cleanList = clean(foundNames)
-    write_files(cleanList)
-    print('\n\nAll done! Check out your lovely new files.')
+    write_files(company, cleanList)
+    print('\n\nAll done! Check out your lovely new files in the li2u-output directory.')
 
 if __name__ == "__main__":
     main()
