@@ -69,18 +69,19 @@ def login(username, password):
         }
 
     response = session.post('https://www.linkedin.com/uas/login-submit', data=authPayload)
-
-    if '<title>LinkedIn</title>' in response.text:
-        print('[+] Successfully logged in.')
+    if bool(re.search('<title>*LinkedIn*</title>', response.text)): # users get slightly different responses here
+        print('[+] Successfully logged in.\n')
         return session
     elif '<title>Sign-In Verification</title>' in response.text:
         print('[!] LinkedIn doesn\'t like something about this login. Maybe you\'re being sneaky on a VPN or')
         print('    something. You may get an email with a verification token. You can ignore that.')
-        print('    To fix this, try logging in with the same account in your browser first, then try this tool again.')
+        print('    Try logging in with the same account in your browser first, then try this tool again.\n')
+        exit()
+    elif '<title>Sign In</title>' in response.text:
+        print('[!] You\'ve been returned to the login page. Check your password and try again.\n')
         exit()
     else:
-        print(response.text)
-        print('[!] Could not log in!')
+        print('[!] Some unknown error logging in. If this persists, please open an issue on github.\n')
         exit()
 
 def get_company_info(name, session):
