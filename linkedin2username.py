@@ -70,7 +70,7 @@ def login(username, password):
 
     response = session.post('https://www.linkedin.com/uas/login-submit', data=authPayload)
 
-    if bool(re.search('<title>*LinkedIn*</title>', response.text)): # users get slightly different responses here
+    if bool(re.search('<title>*?LinkedIn*?</title>', response.text)): # users get slightly different responses here
         print('[+] Successfully logged in.\n')
         return session
     elif '<title>Sign-In Verification</title>' in response.text:
