@@ -69,6 +69,7 @@ def login(username, password):
         }
 
     response = session.post('https://www.linkedin.com/uas/login-submit', data=authPayload)
+
     if bool(re.search('<title>*LinkedIn*</title>', response.text)): # users get slightly different responses here
         print('[+] Successfully logged in.\n')
         return session
@@ -79,6 +80,9 @@ def login(username, password):
         exit()
     elif '<title>Sign In</title>' in response.text:
         print('[!] You\'ve been returned to the login page. Check your password and try again.\n')
+        exit()
+    elif '<title>Security Verification' in response.text:
+        print('[!] You\'ve triggered the security verification. Please verify your login details and try again.\n')
         exit()
     else:
         print('[!] Some unknown error logging in. If this persists, please open an issue on github.\n')
