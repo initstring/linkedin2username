@@ -3,7 +3,7 @@ OSINT Tool: Generate username lists from companies on LinkedIn. Works with Pytho
 
 This is a pure web-scraper, no API key required. You use your valid LinkedIn username and password to login, it will create several lists of possible username formats for all employees of a company you point it at.
 
-Use an account with a lot of connections, otherwise you'll get crappy results.
+Use an account with a lot of connections, otherwise you'll get crappy results. Note that [LinkedIn will cap search results](https://www.linkedin.com/help/linkedin/answer/129/what-you-get-when-you-search-on-linkedin?lang=en) for basic/free accounts to 1000 results.
 
 Here's what you get:
 - first.last.txt: Usernames like Joe.Schmoe
