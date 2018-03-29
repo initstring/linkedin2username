@@ -113,8 +113,8 @@ def get_total_count(result):
     global searchDepth
     totalCount = int(re.findall(r'totalResultCount":(.*?),', result)[0])
     print('[+] Company has ' + str(totalCount) + ' profiles to check. Some may be anonymous.')
-    if (totalCount) > 1000:
-      print('[!] Note: free accounts will limit results to around 1,000. Will implement a workaround in the future...')
+    if totalCount > 1000:
+      print('[!] Note: free accounts will limit results to around 1,000.')
     loops = int((totalCount / 25) + 1)
     if searchDepth != '' and searchDepth < loops:
         print('[!] You defined a low custom search depth, so we might not get them all.')
