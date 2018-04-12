@@ -192,6 +192,7 @@ def write_files(company, list):
     flast = open(dir + '/' + company + '-flast.txt', 'w')
     firstl = open(dir + '/' + company + '-firstl.txt', 'w')
     firstlast = open(dir + '/' + company + '-first.last.txt', 'w')
+    first = open(dir + '/' + company + '-first.txt', 'w')
     for name in list:
         try:
             rawnames.write(name + '\n')
@@ -208,11 +209,13 @@ def write_files(company, list):
                firstlast.write(first + '.' + third + domain + '\n')
                firstl.write(first + second[0] + domain + '\n')
                firstl.write(first + third[0] + domain + '\n')
+               first.write(first[0] + domain + '\n')
             else:                           # this is for users with only one last name
                 first, last = parse[0], parse[-1]
                 flast.write(first[0] + last + domain + '\n')
                 firstlast.write(first + '.' + last + domain + '\n')
                 firstl.write(first + last[0] + domain + '\n')
+                first.write(first[0] + domain + '\n')
         except Exception:
             continue
     for f in (rawnames, flast, firstl, firstlast):
