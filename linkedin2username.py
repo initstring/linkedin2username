@@ -209,16 +209,16 @@ def write_files(company, list):
                firstlast.write(first + '.' + third + domain + '\n')
                firstl.write(first + second[0] + domain + '\n')
                firstl.write(first + third[0] + domain + '\n')
-               first.write(first[0] + domain + '\n')
+               first.write(first + domain + '\n')
             else:                           # this is for users with only one last name
                 first, last = parse[0], parse[-1]
                 flast.write(first[0] + last + domain + '\n')
                 firstlast.write(first + '.' + last + domain + '\n')
                 firstl.write(first + last[0] + domain + '\n')
-                first.write(first[0] + domain + '\n')
+                first.write(first + domain + '\n')
         except Exception:
             continue
-    for f in (rawnames, flast, firstl, firstlast):
+    for f in (rawnames, flast, firstl, firstlast, first):
         f.close()
 
 def main():
