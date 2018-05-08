@@ -96,7 +96,10 @@ def get_company_info(name, session):
         print('[!] Could not find that company name. Please double-check LinkedIn and try again.')
         exit()
     foundName = re.findall(r'companyUniversalName.*?3D(.*?)"', response.text)[0]
-    foundDesc = re.findall(r'localizedName&quot;:&quot;(.*?)&quot', response.text)[0]
+    try:
+        foundDesc = re.findall(r'localizedName&quot;:&quot;(.*?)&quot', response.text)[0]
+    except:
+        foundDesc = "No info found, sorry!"
     print('\n')
     print('          [+] Found: ' + foundName)
     print('          [+] ID:    ' + foundID)
