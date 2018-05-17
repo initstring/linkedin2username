@@ -120,7 +120,6 @@ def get_company_info(name, session):
         foundDesc = "No info found, sorry!"
     foundName = re.findall(r'companyUniversalName.*?3D(.*?)"', response.text)[0]
     foundStaff = re.findall(r'staffCount&quot;:(.*?),', response.text)[0]
-    print('\n')
     print('          Found: ' + foundName)
     print('          ID:    ' + foundID)
     print('          Desc:  ' + foundDesc)
@@ -186,21 +185,22 @@ def scrape_info(session, companyID, staffCount):
     set_loops(staffCount)
     for page in range(0, searchDepth):
         newNames = 0
-        sys.stdout.write('\r' + okBox + 'OK, looking for results on loop numer ' + str(page+1) + '...        ')
+        sys.stdout.flush()
+        sys.stdout.write(okBox + 'OK, looking for results on loop numer ' + str(page+1) + '...        ')
         result = get_results(session, companyID, page)
         firstName = re.findall(r'"firstName":"(.*?)"', result)
         lastName = re.findall(r'"lastName":"(.*?)"', result)
         if len(firstName) == 0 and len(lastName) == 0:
-            sys.stdout.write('We have hit the end of the road! Moving on...')
-            sys.stdout.flush()
+            sys.stdout.write('\n')
+            print(okBox + 'We have hit the end of the road! Moving on...')
             break
         for first,last in zip(firstName,lastName):
             fullName = first + ' ' + last
             if fullName not in fullNameList:
                 fullNameList.append(fullName)
                 newNames +=1
-        sys.stdout.write('    ' + okBox + 'Added ' + str(newNames) + ' new names.')
-        sys.stdout.flush()
+        sys.stdout.write('    ' + okBox + 'Added ' + str(newNames) + ' new names. Running total: '\
+                         + str(len(fullNameList)) + '              \r')
         time.sleep(pageDelay)
     return fullNameList
 
