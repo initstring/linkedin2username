@@ -239,7 +239,9 @@ def clean(list):
         name = re.sub(r'[,(/:].*', '', name)
         name = re.sub(r'[\.\']', '', name)
         name = remove_accents(name)
-        name = allowedChars.sub('',name)
+        name = allowedChars.sub('', name)
+        name = name.lower()
+        name = re.sub('\s+', ' ', name).strip()
         if name not in cleanList:
             cleanList.append(name)
     return cleanList
