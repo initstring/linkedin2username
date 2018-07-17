@@ -54,3 +54,5 @@ optional arguments:
 
 # Toubleshooting
 Sometimes LinkedIn does weird stuff or returns weird results. Sometimes it doesn't like you logging in from new locations. If something looks off, run the tool once or twice more. If it still isn't working, please open an issue.
+
+*This is a security research tool. Use only where granted explicit permission from the network owner.*
