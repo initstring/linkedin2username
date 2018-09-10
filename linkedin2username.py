@@ -108,18 +108,31 @@ def get_company_info(name, session):
     Note that not all companies fill in this info, so exceptions are provided. The company name can be found easily
     by browsing LinkedIn in a web browser, searching for the company, and looking at the name in the address bar.
     """
+    # The following regexes may be moving targets, I will try to keep them up to date.
+    # If you have issues with these, please open a ticket on GitLab. Thanks!
+    companyRegex = r'linkedin\.voyager\.organization\.Company.*?;name&quot;:&quot;(.*?)&quot;'
+    staffRegex = r';staffCount&quot;:(.*?),&'
+    idRegex = r'normalized_company:(.*?)[&,]'
+    descRegex = r'localizedName&quot;:&quot;(.*?)&quot'
+
     response = session.get('https://linkedin.com/company/' + name)
     try:
-        foundID = re.findall(r'normalized_company:(.*?)[&,]', response.text)[0]
+        foundID = re.findall(idRegex, response.text)[0]
     except:
         print(warnBox + 'Could not find that company name. Please double-check LinkedIn and try again.')
         exit()
     try:
-        foundDesc = re.findall(r'localizedName&quot;:&quot;(.*?)&quot', response.text)[0]
+        foundDesc = re.findall(descRegex, response.text)[0]
     except:
-        foundDesc = "No info found, sorry!"
-    foundName = re.findall(r'companyUniversalName.*?3D(.*?)"', response.text)[0]
-    foundStaff = re.findall(r'staffCount&quot;:(.*?),', response.text)[0]
+        foundDesc = "RegEx issues, please open a ticket on GitLab!"
+    try:
+        foundName = re.findall(companyRegex, response.text)[0]
+    except:
+        foundName = "RegEx issues, please open a ticket on GitLab!"
+    try:
+        foundStaff = re.findall(staffRegex, response.text)[0]
+    except:
+        foundStaff = "RegEx issues, please open a ticket on GitLab!"
     print('          Found: ' + foundName)
     print('          ID:    ' + foundID)
     print('          Desc:  ' + foundDesc)
