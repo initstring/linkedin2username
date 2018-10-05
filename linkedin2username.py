@@ -1,15 +1,7 @@
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import re
-import string
-import time
-import unicodedata
-import argparse
-import getpass
-import requests
-import urllib
-import sys
-import os
+import re,string,time,unicodedata,argparse,getpass,requests,urllib,sys,os;
 
 
 # Print a cool banner
@@ -23,7 +15,8 @@ BANNER="""
                  Thanks to all the smart people on StackOverflow.
                         I hope you get in. - initstring\n\n\n\n"""
 
-# Handle arguments before moving on....
+#############################           Global Variable Declarations           #############################
+
 parser = argparse.ArgumentParser()
 parser.add_argument('username', type=str, help='A valid LinkedIn username.', action='store')
 parser.add_argument('company', type=str, help='Company name.', action='store')
@@ -31,19 +24,23 @@ parser.add_argument('-p', '--password', type=str, help='Specify your password on
                      the command line. If not specified, will prompt and not display on screen.', action='store')
 parser.add_argument('-n', '--domain', type=str, help='Append a domain name to username output. \
                      [example: "-n uber.com" would ouput jschmoe@uber.com]', action='store')
-parser.add_argument('-d', '--depth', type=int, help='Search depth. If unset, will try to grab them all.', action='store')
+parser.add_argument('-d', '--depth', type=int, help='Search depth. If unset, will try to grab them all.', 
+                    default = False, action='store')
 parser.add_argument('-s', '--sleep', type=int, help='Seconds to sleep between pages. \
-                     defaults to 3.', action='store')
+                     defaults to 3.', default=3, action='store')
+parser.add_argument('-x', '--proxy', type=str, help='HTTPS proxy server to use. Example: "-p https://localhost:8080" \
+                    WARNING: WILL DISABLE SSL VERIFICATION.', action='store', default='')
 args = parser.parse_args()
 
 username = args.username
 company = args.company
+searchDepth = args.depth
+pageDelay = args.sleep
+proxyDict = {"https" : args.proxy}
 if args.domain:
     domain = '@' + args.domain
 else:
     domain = ''
-searchDepth = args.depth or ''
-pageDelay = args.sleep or 3
 password = args.password or getpass.getpass()
 
 # Set up some nice colors
@@ -53,6 +50,8 @@ class bcolors:
     ENDC = '\033[0m'
 okBox = bcolors.OKGREEN + '[+] ' + bcolors.ENDC
 warnBox = bcolors.WARNING + '[!] ' + bcolors.ENDC
+
+#############################         End Global Variable Declarations          #############################
 
 
 def login(username, password):
@@ -66,6 +65,13 @@ def login(username, password):
     Accounts using multi-factor auth are not yet supported and will produce an error
     """
     session = requests.session()
+    if args.proxy:
+        # Disable SSL errors when using a proxy, usefuly for debugging in Burp.
+        print(warnBox + "Using a proxy, ignoring SSL errors. Don't get pwned.")
+        session.verify = False
+        from requests.packages.urllib3.exceptions import InsecureRequestWarning
+        requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
+        session.proxies.update(proxyDict)
     mobileAgent = 'Mozilla/5.0 (Linux; U; Android 2.2; en-us; Droid Build/FRG22D) AppleWebKit/533.1 (KHTML, like Gecko) \
                    Version/4.0 Mobile Safari/533.1'
     session.headers.update({'User-Agent': mobileAgent})
@@ -115,7 +121,7 @@ def get_company_info(name, session):
     idRegex = r'normalized_company:(.*?)[&,]'
     descRegex = r'localizedName&quot;:&quot;(.*?)&quot'
 
-    response = session.get('https://linkedin.com/company/' + name)
+    response = session.get('https://www.linkedin.com/company/' + name)
     try:
         foundID = re.findall(idRegex, response.text)[0]
     except:
@@ -161,7 +167,7 @@ def set_loops(staffCount):
     if staffCount > 1000:
       print(warnBox + 'Note: LinkedIn limits us to a maximum of 1000 results!')
     loops = int((staffCount / 25) + 1)
-    if searchDepth != '' and searchDepth < loops:
+    if searchDepth and searchDepth < loops:
         print(warnBox + 'You defined a low custom search depth, so we might not get them all.')
     else:
         print(okBox + 'Setting search to ' + str(loops) + ' loops of 25 results each.')
@@ -176,7 +182,7 @@ def get_results(session, companyID, page):
     The mobile app defaults to using a 'count' of 10, but testing shows that 25 is allowed. This behavior will appear
     to the web server as someone scrolling quickly through all available results.
     """
-    url = 'https://linkedin.com'
+    url = 'https://www.linkedin.com'
     url += '/voyager/api/search/hits?count=25&guides=facetCurrentCompany-%3E'
     url += companyID
     url += '&origin=OTHER&q=guided&start='
