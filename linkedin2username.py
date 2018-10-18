@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 """
-evil-ssdp by initstring (gitlab.com/initstring)
+linkedin2username by initstring (gitlab.com/initstring)
 
 OSINT tool to discover likely usernames and email addresses for employees
 of a given company on LinkedIn. This tool actually logs in with your valid
