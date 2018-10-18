@@ -3,7 +3,7 @@ OSINT Tool: Generate username lists from companies on LinkedIn.
 
 This is a pure web-scraper, no API key required. You use your valid LinkedIn username and password to login, it will create several lists of possible username formats for all employees of a company you point it at.
 
-Use an account with a lot of connections, otherwise you'll get crappy results. Adding a couple connections at the target company should help - this tool will work up to third degree connections. Note that [LinkedIn will cap search results](https://www.linkedin.com/help/linkedin/answer/129/what-you-get-when-you-search-on-linkedin?lang=en) to 1000 employees max.
+Use an account with a lot of connections, otherwise you'll get crappy results. Adding a couple connections at the target company should help - this tool will work up to third degree connections. Note that [LinkedIn will cap search results](https://www.linkedin.com/help/linkedin/answer/129/what-you-get-when-you-search-on-linkedin?lang=en) to 1000 employees max. You can use the features '--geoblast' or '--keywords' to bypass this limit. Look at help below for more details.
 
 Here's what you get:
 - first.last.txt: Usernames like Joe.Schmoe
@@ -50,6 +50,20 @@ optional arguments:
                         Search depth. If unset, will try to grab them all.
   -s SLEEP, --sleep SLEEP
                         Seconds to sleep between pages. defaults to 3.
+  -x PROXY, --proxy PROXY
+                        HTTPS proxy server to use. Example: "-p
+                        https://localhost:8080" WARNING: WILL DISABLE SSL
+                        VERIFICATION.
+
+  -k KEYWORDS, --keywords KEYWORDS
+                        Filter results by a a list of command separated
+                        keywords. Will do a separate loop for each keyword,
+                        potentially bypassing the 1,000 record limit.
+                        [example: "-k 'sales,human resources,information
+                        technology']
+  -g, --geoblast        Attempts to bypass the 1,000 record search limit by
+                        running multiple searches split across geographic
+                        regions.
 ```
 
 # Toubleshooting
