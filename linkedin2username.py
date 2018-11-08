@@ -254,9 +254,8 @@ def get_company_info(name, session):
     # The following regexes may be moving targets, I will try to keep them up
     # to date. If you have issues with these, please open a ticket on GitLab.
     # Thanks!
-    company_regex = (r'linkedin\.voyager\.organization\.Company.*'
-                     '?;name&quot;:&quot;(.*?)&quot;')
-    staff_regex = r';staffCount&quot;:(.*?),&'
+    company_regex = (r'companyName&quot;:&quot;(.*?)&quot;')
+    staff_regex = r';staffCount&quot;:([0-9]+),&'
     id_regex = r'normalized_company:([0-9]+)[&,]'
     desc_regex = r'localizedName&quot;:&quot;(.*?)&quot'
 
