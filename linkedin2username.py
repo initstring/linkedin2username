@@ -254,14 +254,14 @@ def get_company_info(name, session):
     # The following regexes may be moving targets, I will try to keep them up
     # to date. If you have issues with these, please open a ticket on GitLab.
     # Thanks!
-    company_regex = (r'companyName&quot;:&quot;(.*?)&quot;')
+    website_regex = r'companyPageUrl&quot;:&quot;(http.*?)&quot;'
     staff_regex = r';staffCount&quot;:([0-9]+),&'
     id_regex = r'normalized_company:([0-9]+)[&,]'
     desc_regex = r'localizedName&quot;:&quot;(.*?)&quot'
 
     response = session.get('https://www.linkedin.com/company/' + name)
 
-    # Will search for the company name in the response. If not found, the
+    # Will search for the company ID in the response. If not found, the
     # program cannot succeed and must exit.
     found_id = re.findall(id_regex, response.text)
     if not found_id:
@@ -274,17 +274,18 @@ def get_company_info(name, session):
     found_desc = re.findall(desc_regex, response.text)
     if not found_desc:
         found_desc = ["RegEx issues, please open a ticket on GitLab!"]
-    found_name = re.findall(company_regex, response.text)
-    if not found_name:
-        found_name = ["RegEx issues, please open a ticket on GitLab!"]
     found_staff = re.findall(staff_regex, response.text)
     if not found_staff:
         found_staff = ["RegEx issues, please open a ticket on GitLab!"]
+    found_website = re.findall(website_regex, response.text)
+    if not found_website:
+        found_website = ["RegEx issues, please open a ticket on GitLab!"]
 
-    print("          Found: " + found_name[0])
     print("          ID:    " + found_id[0])
+    print("          Alias: " + name)
     print("          Desc:  " + found_desc[0])
     print("          Staff: " + str(found_staff[0]))
+    print("          URL:   " + found_website[0])
     print("\n" + PC.ok_box + "Hopefully that's the right {}! If not,"
           "double-check LinkedIn and try again.\n".format(name))
 
