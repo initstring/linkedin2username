@@ -14,9 +14,14 @@ import re
 import time
 import argparse
 import getpass
+from distutils.version import StrictVersion
+
 import requests
 
 
+                ########## BEGIN GLOBAL DECLARATIONS ##########
+
+CURRENT_TAG = '0.10'
 BANNER = r"""
 
                             .__  .__________
@@ -30,26 +35,6 @@ BANNER = r"""
                               gitlab.com/initstring
 
 """
-
-
-if sys.version_info < (3, 0):
-    print("\nSorry mate, you'll need to use Python 3+ on this one...\n")
-    sys.exit(1)
-
-
-class PC:
-    """PC (Print Color)
-    Used to generate some colorful, relevant, nicely formatted status messages.
-    """
-    green = '\033[92m'
-    blue = '\033[94m'
-    orange = '\033[93m'
-    endc = '\033[0m'
-    ok_box = blue + '[*] ' + endc
-    note_box = green + '[+] ' + endc
-    warn_box = orange + '[!] ' + endc
-
-
 # The dictionary below is a best-effort attempt to spread a search load
 # across sets of geographic locations. This can bypass the 1000 result
 # search limit as we are now allowed 1000 per geo set.
@@ -68,6 +53,25 @@ GEO_REGIONS = {
     'r11':('ar:0|bo:0|br:0|cl:0|co:0|cr:0|do:0|ec:0|gt:0|mx:0|pa:0|pe:0'
            '|pr:0|tt:0|uy:0|ve:0'),
     'r12':'af:0|bh:0|il:0|jo:0|kw:0|pk:0|qa:0|sa:0|ae:0'}
+
+                 ########## END GLOBAL DECLARATIONS ##########
+
+if sys.version_info < (3, 0):
+    print("\nSorry mate, you'll need to use Python 3+ on this one...\n")
+    sys.exit(1)
+
+
+class PC:
+    """PC (Print Color)
+    Used to generate some colorful, relevant, nicely formatted status messages.
+    """
+    green = '\033[92m'
+    blue = '\033[94m'
+    orange = '\033[93m'
+    endc = '\033[0m'
+    ok_box = blue + '[*] ' + endc
+    note_box = green + '[+] ' + endc
+    warn_box = orange + '[!] ' + endc
 
 
 def parse_arguments():
@@ -137,6 +141,51 @@ def parse_arguments():
     args.password = args.password or getpass.getpass()
 
     return args
+
+
+def check_li2u_version():
+    """Checks Gitlab for a new version
+
+    Uses a simple regex to look at the 'tags' page on Gitlab. Extracts the
+    First tag found and assumes it is the latest. Compares with the global
+    variable CURRENT_TAG and informs if a new version is available.
+    """
+    latest_tags_regex = r'href="/initstring/linkedin2username/tags/(.*?)"'
+    session = requests.session()
+    tags_url = 'https://gitlab.com/initstring/linkedin2username/tags'
+    tags_chars = re.compile(r'[^0-9\.]')
+
+    # Scrape the page and grab the regex.
+    response = session.get(tags_url)
+    latest_tag = re.findall(latest_tags_regex, response.text)
+
+    # Remove characters from tag name that will mess up version comparison.
+    # Also just continue if we can't find the tags - we don't want that small
+    # function to break the entire app.
+    if latest_tag[0]:
+        latest_tag = tags_chars.sub('', latest_tag[0])
+    else:
+        return
+
+    # Check the tag found with the one defined in this script.
+    if CURRENT_TAG == latest_tag:
+        print("")
+        print(PC.ok_box + "Using version {}, which is the latest on"
+              " Gitlab.\n".format(CURRENT_TAG))
+        return
+    if StrictVersion(CURRENT_TAG) > StrictVersion(latest_tag):
+        print("")
+        print(PC.warn_box + "Using version {}, which is NEWER than {}, the"
+              " latest official release. Good luck!\n"
+              .format(CURRENT_TAG, latest_tag))
+        return
+    if StrictVersion(CURRENT_TAG) < StrictVersion(latest_tag):
+        print("")
+        print(PC.warn_box + "You are using {}, but {} is available.\n"
+              "    LinkedIn changes often - this version may not work.\n"
+              "    https://gitlab.com/initstring/linkedin2username.\n"
+              .format(CURRENT_TAG, latest_tag))
+        return
 
 
 def login(args):
@@ -536,15 +585,16 @@ def write_files(company, domain, name_list):
         os.makedirs(out_dir)
 
     # Define all the files names we will be creating.
-    rawnames = open(out_dir + '/' + company + '-rawnames.txt', 'w')
-    flast = open(out_dir + '/' + company + '-flast.txt', 'w')
-    firstl = open(out_dir + '/' + company + '-firstl.txt', 'w')
-    firstlast = open(out_dir + '/' + company + '-first.last.txt', 'w')
-    fonly = open(out_dir + '/' + company + '-first.txt', 'w')
+    files = {}
+    files['rawnames'] = open(out_dir + '/' + company + '-rawnames.txt', 'w')
+    files['flast'] = open(out_dir + '/' + company + '-flast.txt', 'w')
+    files['firstl'] = open(out_dir + '/' + company + '-firstl.txt', 'w')
+    files['firstlast'] = open(out_dir + '/' + company + '-first.last.txt', 'w')
+    files['fonly'] = open(out_dir + '/' + company + '-first.txt', 'w')
 
     # First, write all the raw names to a file.
     for name in name_list:
-        rawnames.write(name + '\n')
+        files['rawnames'].write(name + '\n')
 
         # Split the name on spaces and hyphens:
         parse = re.split(' |-', name)
@@ -557,19 +607,19 @@ def write_files(company, domain, name_list):
         try:
             if len(parse) > 2:  # for users with more than one last name.
                 first, second, third = parse[0], parse[-2], parse[-1]
-                flast.write(first[0] + second + domain + '\n')
-                flast.write(first[0] + third + domain + '\n')
-                firstlast.write(first + '.' + second + domain + '\n')
-                firstlast.write(first + '.' + third + domain + '\n')
-                firstl.write(first + second[0] + domain + '\n')
-                firstl.write(first + third[0] + domain + '\n')
-                fonly.write(first + domain + '\n')
+                files['flast'].write(first[0] + second + domain + '\n')
+                files['flast'].write(first[0] + third + domain + '\n')
+                files['firstlast'].write(first + '.' + second + domain + '\n')
+                files['firstlast'].write(first + '.' + third + domain + '\n')
+                files['firstl'].write(first + second[0] + domain + '\n')
+                files['firstl'].write(first + third[0] + domain + '\n')
+                files['fonly'].write(first + domain + '\n')
             else:               # for users with only one last name
                 first, last = parse[0], parse[-1]
-                flast.write(first[0] + last + domain + '\n')
-                firstlast.write(first + '.' + last + domain + '\n')
-                firstl.write(first + last[0] + domain + '\n')
-                fonly.write(first + domain + '\n')
+                files['flast'].write(first[0] + last + domain + '\n')
+                files['firstlast'].write(first + '.' + last + domain + '\n')
+                files['firstl'].write(first + last[0] + domain + '\n')
+                files['fonly'].write(first + domain + '\n')
 
         # The exception below will try to weed out string processing errors
         # I've made in other parts of the program.
@@ -578,14 +628,17 @@ def write_files(company, domain, name_list):
                   .format(name))
 
     # Cleanly close all the files.
-    for file_name in (rawnames, flast, firstl, firstlast, fonly):
-        file_name.close()
+    for file_name in files:
+        files[file_name].close()
 
 
 def main():
     """Main Function"""
     print(BANNER + "\n\n\n")
     args = parse_arguments()
+
+    # Check the version
+    check_li2u_version()
 
     # Instantiate a session by logging in to LinkedIn.
     session = login(args)
