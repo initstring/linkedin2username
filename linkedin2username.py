@@ -21,7 +21,7 @@ import requests
 
                 ########## BEGIN GLOBAL DECLARATIONS ##########
 
-CURRENT_TAG = '0.10'
+CURRENT_TAG = '0.11'
 BANNER = r"""
 
                             .__  .__________
@@ -309,6 +309,18 @@ def get_company_info(name, session):
     desc_regex = r'localizedName&quot;:&quot;(.*?)&quot'
 
     response = session.get('https://www.linkedin.com/company/' + name)
+
+    # Some geo regions are being fed a 'lite' version of LinkedIn mobile:
+    # https://bit.ly/2vGcft0
+    # The following bit is a temporary fix until I can figure out a
+    # low-maintenence solution that is inclusive of these areas.
+    if 'mwlite' in response.text:
+        print(PC.warn_box + "You are being served the 'lite' version of"
+              " LinkedIn (https://bit.ly/2vGcft0) that is not yet supported"
+              " by this tool. Please try again using a VPN exiting from USA,"
+              " EU, or Australia.")
+        print("    A permanent fix is being researched. Sorry about that!")
+        sys.exit()
 
     # Will search for the company ID in the response. If not found, the
     # program cannot succeed and must exit.
