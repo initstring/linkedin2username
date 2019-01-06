@@ -21,7 +21,7 @@ import requests
 
                 ########## BEGIN GLOBAL DECLARATIONS ##########
 
-CURRENT_TAG = '0.11'
+CURRENT_TAG = '0.12'
 BANNER = r"""
 
                             .__  .__________
@@ -219,8 +219,8 @@ def login(args):
     mobile_agent = ('Mozilla/5.0 (Linux; U; Android 2.2; en-us; Droid '
                     'Build/FRG22D) AppleWebKit/533.1 (KHTML, like Gecko) '
                     'Version/4.0 Mobile Safari/533.1')
-    session.headers.update({'User-Agent': mobile_agent,
-                            'X-RestLi-Protocol-Version': '2.0.0'})
+    session.headers.update({'User-Agent': mobile_agent})
+                            #'X-RestLi-Protocol-Version': '2.0.0'})
 
     # We wll grab an anonymous response to look for the CSRF token, which
     # is required for our logon attempt.
@@ -237,6 +237,7 @@ def login(args):
     auth_payload = {
         'session_key': args.username,
         'session_password': args.password,
+        'isJsEnabled': 'false',
         'loginCsrfParam': login_csrf
         }
 
@@ -263,11 +264,11 @@ def login(args):
             print(PC.warn_box + "You've triggered a CAPTCHA. Oops. Try logging"
                   " in with your web browser first and come back later.")
             return False
-    else:
-        # The below will detect some 302 that I don't yet know about.
-        print(PC.warn_box + "Some unknown error logging in. If this persists,"
-              "please open an issue on gitlab.\n")
-        return False
+        else:
+            # The below will detect some 302 that I don't yet know about.
+            print(PC.warn_box + "Some unknown error logging in. If this"
+                  " persists, please open an issue on gitlab.\n")
+            return False
 
     # A failed logon doesn't generate a 302 at all, but simply reponds with
     # the logon page. We detect this here.
@@ -303,12 +304,14 @@ def get_company_info(name, session):
     # The following regexes may be moving targets, I will try to keep them up
     # to date. If you have issues with these, please open a ticket on GitLab.
     # Thanks!
-    website_regex = r'companyPageUrl&quot;:&quot;(http.*?)&quot;'
-    staff_regex = r';staffCount&quot;:([0-9]+),&'
-    id_regex = r'normalized_company:([0-9]+)[&,]'
-    desc_regex = r'localizedName&quot;:&quot;(.*?)&quot'
+    website_regex = r'companyPageUrl":"(http.*?)"'
+    staff_regex = r'staffCount":([0-9]+),'
+    id_regex = r'normalized_company:([0-9]+)[&,"]'
+    desc_regex = r'localizedName":"(.*?)"'
 
-    response = session.get('https://www.linkedin.com/company/' + name)
+    response = session.get(('https://www.linkedin.com'
+                            '/voyager/api/organization/companies?'
+                            'q=universalName&universalName=' + name))
 
     # Some geo regions are being fed a 'lite' version of LinkedIn mobile:
     # https://bit.ly/2vGcft0
