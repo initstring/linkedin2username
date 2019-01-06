@@ -219,8 +219,8 @@ def login(args):
     mobile_agent = ('Mozilla/5.0 (Linux; U; Android 2.2; en-us; Droid '
                     'Build/FRG22D) AppleWebKit/533.1 (KHTML, like Gecko) '
                     'Version/4.0 Mobile Safari/533.1')
-    session.headers.update({'User-Agent': mobile_agent})
-                            #'X-RestLi-Protocol-Version': '2.0.0'})
+    session.headers.update({'User-Agent': mobile_agent,
+                            'X-RestLi-Protocol-Version': '2.0.0'})
 
     # We wll grab an anonymous response to look for the CSRF token, which
     # is required for our logon attempt.
@@ -420,21 +420,19 @@ def get_results(session, company_id, page, region, keyword):
     # codes into the search parameter.
     if region:
         region = re.sub(':', '%3A', region) # must URL encode this parameter
-        guides_param = ('List(v-%3EPEOPLE,facetCurrentCompany-%3E{},'
-                        'facetGeoRegion-%3E{})'.format(company_id, region))
-    else:
-        guides_param = ('List(v-%3EPEOPLE,facetCurrentCompany-%3E{})'
-                        .format(company_id))
 
     # Build the base search URL.
-    url = ('https://www.linkedin.com/voyager/api/search/hits?guides={}'
-           '&origin=FACETED_SEARCH&count=25&q=guided&start={}'
-           .format(guides_param, page*25))
-
-    # If using keywords, they are appended to the URL (not embedded in the
-    # middle like regions.
-    if keyword:
-        url += '&keywords={}'.format(keyword)
+    url = ('https://www.linkedin.com'
+           '/voyager/api/search/hits'
+           '?facetCurrentCompany=List({})'
+           '&facetGeoRegion=List({})'
+           '&keywords=List({})'
+           '&q=people&maxFacetValues=15'
+           '&supportedFacets=List(GEO_REGION,CURRENT_COMPANY)'
+           '&count=25'
+           '&origin=organization'
+           '&start={}'
+           .format(company_id, region, keyword, page * 25))
 
     # Perform the search for this iteration.
     result = session.get(url)
