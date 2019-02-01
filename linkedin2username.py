@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 """
-linkedin2username by initstring (gitlab.com/initstring)
+linkedin2username by initstring (github.com/initstring)
 
 OSINT tool to discover likely usernames and email addresses for employees
 of a given company on LinkedIn. This tool actually logs in with your valid
@@ -32,7 +32,7 @@ BANNER = r"""
                                linkedin2username
     
                                    Spray away.
-                              gitlab.com/initstring
+                              github.com/initstring
 
 """
 # The dictionary below is a best-effort attempt to spread a search load
