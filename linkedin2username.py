@@ -21,7 +21,7 @@ import requests
 
                 ########## BEGIN GLOBAL DECLARATIONS ##########
 
-CURRENT_TAG = '0.12'
+CURRENT_REL = '0.13'
 BANNER = r"""
 
                             .__  .__________
@@ -144,47 +144,47 @@ def parse_arguments():
 
 
 def check_li2u_version():
-    """Checks Gitlab for a new version
+    """Checks GitHub for a new version
 
     Uses a simple regex to look at the 'tags' page on Gitlab. Extracts the
     First tag found and assumes it is the latest. Compares with the global
     variable CURRENT_TAG and informs if a new version is available.
     """
-    latest_tags_regex = r'href="/initstring/linkedin2username/tags/(.*?)"'
+    latest_rel_regex = r'/initstring/linkedin2username/tree/(.*?)"'
     session = requests.session()
-    tags_url = 'https://gitlab.com/initstring/linkedin2username/tags'
-    tags_chars = re.compile(r'[^0-9\.]')
+    rel_url = 'https://github.com/initstring/linkedin2username/releases'
+    rel_chars = re.compile(r'[^0-9\.]')
 
     # Scrape the page and grab the regex.
-    response = session.get(tags_url)
-    latest_tag = re.findall(latest_tags_regex, response.text)
+    response = session.get(rel_url)
+    latest_rel = re.findall(latest_rel_regex, response.text)
 
     # Remove characters from tag name that will mess up version comparison.
     # Also just continue if we can't find the tags - we don't want that small
     # function to break the entire app.
-    if latest_tag[0]:
-        latest_tag = tags_chars.sub('', latest_tag[0])
+    if latest_rel[0]:
+        latest_rel = rel_chars.sub('', latest_rel[0])
     else:
         return
 
     # Check the tag found with the one defined in this script.
-    if CURRENT_TAG == latest_tag:
+    if CURRENT_REL == latest_rel:
         print("")
         print(PC.ok_box + "Using version {}, which is the latest on"
-              " Gitlab.\n".format(CURRENT_TAG))
+              " GitHub.\n".format(CURRENT_REL))
         return
-    if StrictVersion(CURRENT_TAG) > StrictVersion(latest_tag):
+    if StrictVersion(CURRENT_REL) > StrictVersion(latest_rel):
         print("")
         print(PC.warn_box + "Using version {}, which is NEWER than {}, the"
               " latest official release. Good luck!\n"
-              .format(CURRENT_TAG, latest_tag))
+              .format(CURRENT_REL, latest_rel))
         return
-    if StrictVersion(CURRENT_TAG) < StrictVersion(latest_tag):
+    if StrictVersion(CURRENT_REL) < StrictVersion(latest_tag):
         print("")
         print(PC.warn_box + "You are using {}, but {} is available.\n"
               "    LinkedIn changes often - this version may not work.\n"
-              "    https://gitlab.com/initstring/linkedin2username.\n"
-              .format(CURRENT_TAG, latest_tag))
+              "    https://github.com/initstring/linkedin2username.\n"
+              .format(CURRENT_REL, latest_REL))
         return
 
 
