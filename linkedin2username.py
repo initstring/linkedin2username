@@ -21,7 +21,7 @@ import requests
 
                 ########## BEGIN GLOBAL DECLARATIONS ##########
 
-CURRENT_REL = '0.13'
+CURRENT_REL = '0.14'
 BANNER = r"""
 
                             .__  .__________
@@ -179,12 +179,12 @@ def check_li2u_version():
               " latest official release. Good luck!\n"
               .format(CURRENT_REL, latest_rel))
         return
-    if StrictVersion(CURRENT_REL) < StrictVersion(latest_tag):
+    if StrictVersion(CURRENT_REL) < StrictVersion(latest_rel):
         print("")
         print(PC.warn_box + "You are using {}, but {} is available.\n"
               "    LinkedIn changes often - this version may not work.\n"
               "    https://github.com/initstring/linkedin2username.\n"
-              .format(CURRENT_REL, latest_REL))
+              .format(CURRENT_REL, latest_rel))
         return
 
 
@@ -243,12 +243,13 @@ def login(args):
 
     # Perform the actual login. We disable redirects as we will use that 302
     # as an indicator of a successful logon.
-    response = session.post('https://www.linkedin.com/uas/login-submit',
+    response = session.post('https://www.linkedin.com/uas/login-submit'
+                            '?loginSubmitSource=GUEST_HOME',
                             data=auth_payload, allow_redirects=False)
 
     # Define a successful login by the 302 redirect to the 'feed' page. Try
     # to detect some other common logon failures and alert the user.
-    if response.status_code == 302:
+    if response.status_code == 302 or response.status_code == 303:
         redirect = response.headers['Location']
         if 'feed' in redirect:
             print(PC.ok_box + "Successfully logged in.\n")
@@ -264,11 +265,11 @@ def login(args):
             print(PC.warn_box + "You've triggered a CAPTCHA. Oops. Try logging"
                   " in with your web browser first and come back later.")
             return False
-        else:
-            # The below will detect some 302 that I don't yet know about.
-            print(PC.warn_box + "Some unknown error logging in. If this"
-                  " persists, please open an issue on gitlab.\n")
-            return False
+
+        # The below will detect some 302 that I don't yet know about.
+        print(PC.warn_box + "Some unknown error logging in. If this"
+              " persists, please open an issue on gitlab.\n")
+        return False
 
     # A failed logon doesn't generate a 302 at all, but simply reponds with
     # the logon page. We detect this here.
@@ -604,6 +605,7 @@ def write_files(company, domain, name_list):
     files['firstl'] = open(out_dir + '/' + company + '-firstl.txt', 'w')
     files['firstlast'] = open(out_dir + '/' + company + '-first.last.txt', 'w')
     files['fonly'] = open(out_dir + '/' + company + '-first.txt', 'w')
+    files['lastf'] = open(out_dir + '/' + company + '-lastf.txt', 'w')
 
     # First, write all the raw names to a file.
     for name in name_list:
@@ -622,6 +624,8 @@ def write_files(company, domain, name_list):
                 first, second, third = parse[0], parse[-2], parse[-1]
                 files['flast'].write(first[0] + second + domain + '\n')
                 files['flast'].write(first[0] + third + domain + '\n')
+                files['lastf'].write(second + first[0] + domain + '\n')
+                files['lastf'].write(third + first[0] + domain + '\n')
                 files['firstlast'].write(first + '.' + second + domain + '\n')
                 files['firstlast'].write(first + '.' + third + domain + '\n')
                 files['firstl'].write(first + second[0] + domain + '\n')
@@ -630,6 +634,7 @@ def write_files(company, domain, name_list):
             else:               # for users with only one last name
                 first, last = parse[0], parse[-1]
                 files['flast'].write(first[0] + last + domain + '\n')
+                files['lastf'].write(last + first[0] + domain + '\n')
                 files['firstlast'].write(first + '.' + last + domain + '\n')
                 files['firstl'].write(first + last[0] + domain + '\n')
                 files['fonly'].write(first + domain + '\n')
