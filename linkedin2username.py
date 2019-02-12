@@ -146,7 +146,7 @@ def parse_arguments():
 def check_li2u_version():
     """Checks GitHub for a new version
 
-    Uses a simple regex to look at the 'tags' page on Gitlab. Extracts the
+    Uses a simple regex to look at the 'releases' page on GitHub. Extracts the
     First tag found and assumes it is the latest. Compares with the global
     variable CURRENT_TAG and informs if a new version is available.
     """
@@ -268,7 +268,7 @@ def login(args):
 
         # The below will detect some 302 that I don't yet know about.
         print(PC.warn_box + "Some unknown error logging in. If this"
-              " persists, please open an issue on gitlab.\n")
+              " persists, please open an issue on github.\n")
         return False
 
     # A failed logon doesn't generate a 302 at all, but simply reponds with
@@ -281,7 +281,7 @@ def login(args):
     # If we make it past everything above, we have no idea what happened.
     # Oh well, we fail.
     print(PC.warn_box + "Some unknown error logging in. If this persists,"
-          "please open an issue on gitlab.\n")
+          "please open an issue on github.\n")
     return False
 
 
@@ -303,7 +303,7 @@ def get_company_info(name, session):
     searching for the company, and looking at the name in the address bar.
     """
     # The following regexes may be moving targets, I will try to keep them up
-    # to date. If you have issues with these, please open a ticket on GitLab.
+    # to date. If you have issues with these, please open a ticket on GitHub.
     # Thanks!
     website_regex = r'companyPageUrl":"(http.*?)"'
     staff_regex = r'staffCount":([0-9]+),'
@@ -338,13 +338,13 @@ def get_company_info(name, session):
     # set generic strings as warnings.
     found_desc = re.findall(desc_regex, response.text)
     if not found_desc:
-        found_desc = ["RegEx issues, please open a ticket on GitLab!"]
+        found_desc = ["RegEx issues, please open a ticket on GitHub!"]
     found_staff = re.findall(staff_regex, response.text)
     if not found_staff:
-        found_staff = ["RegEx issues, please open a ticket on GitLab!"]
+        found_staff = ["RegEx issues, please open a ticket on GitHub!"]
     found_website = re.findall(website_regex, response.text)
     if not found_website:
-        found_website = ["RegEx issues, please open a ticket on GitLab!"]
+        found_website = ["RegEx issues, please open a ticket on GitHub!"]
 
     print("          ID:    " + found_id[0])
     print("          Alias: " + name)
