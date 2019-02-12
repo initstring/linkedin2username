@@ -10,6 +10,7 @@ Here's what you get:
 - flast.txt:      Usernames like JSchmoe
 - firstl.txt:     Usernames like JoeS
 - first.txt       Usernames like Joe
+- lastf.txt       Usernames like SchmoeJ
 - rawnames.txt:   Full name like Joe Schmoe
 
 Optionally, the tool will append @domain.xxx to the usernames.
