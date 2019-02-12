@@ -78,11 +78,17 @@ def parse_arguments():
     """
     Handle user-supplied arguments
     """
-    parser = argparse.ArgumentParser()
+    desc = ('OSINT tool to generate lists of probable usernames from a'
+            ' given company\'s LinkedIn page. This tool may break when'
+            ' LinkedIn changes their site. Please open issues on GitHub'
+            ' to report any inconsistencies, and they will be quickly fixed.')
+    parser = argparse.ArgumentParser(description=desc)
 
-    parser.add_argument('username', type=str, action='store',
+    parser.add_argument('-u', '--username', type=str, action='store',
+                        required=True,
                         help='A valid LinkedIn username.')
-    parser.add_argument('company', type=str, action='store',
+    parser.add_argument('-c', '--company', type=str, action='store',
+                        required=True,
                         help='Company name exactly as typed in the company '
                         'linkedin profile page URL.')
     parser.add_argument('-p', '--password', type=str, action='store',
