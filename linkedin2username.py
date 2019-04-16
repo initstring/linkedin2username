@@ -15,7 +15,7 @@ import time
 import argparse
 import getpass
 from distutils.version import StrictVersion
-
+import urllib.parse
 import requests
 
 
@@ -315,10 +315,11 @@ def get_company_info(name, session):
     staff_regex = r'staffCount":([0-9]+),'
     id_regex = r'normalized_company:([0-9]+)[&,"]'
     desc_regex = r'localizedName":"(.*?)"'
+    escaped_name = urllib.parse.quote_plus(name)
 
     response = session.get(('https://www.linkedin.com'
                             '/voyager/api/organization/companies?'
-                            'q=universalName&universalName=' + name))
+                            'q=universalName&universalName=' + escaped_name))
 
     # Some geo regions are being fed a 'lite' version of LinkedIn mobile:
     # https://bit.ly/2vGcft0
