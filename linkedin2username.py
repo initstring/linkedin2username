@@ -21,7 +21,7 @@ import requests
 
                 ########## BEGIN GLOBAL DECLARATIONS ##########
 
-CURRENT_REL = '0.15'
+CURRENT_REL = '0.16'
 BANNER = r"""
 
                             .__  .__________
@@ -313,7 +313,7 @@ def get_company_info(name, session):
     # Thanks!
     website_regex = r'companyPageUrl":"(http.*?)"'
     staff_regex = r'staffCount":([0-9]+),'
-    id_regex = r'normalized_company:([0-9]+)[&,"]'
+    id_regex = r'"objectUrn":"urn:li:company:([0-9]+)"'
     desc_regex = r'localizedName":"(.*?)"'
     escaped_name = urllib.parse.quote_plus(name)
 
