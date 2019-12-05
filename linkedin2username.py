@@ -260,7 +260,7 @@ def login(args):
         if 'feed' in redirect:
             print(PC.ok_box + "Successfully logged in.\n")
             return session
-        if 'consumer-email-challenge' in redirect:
+        if 'challenge' in redirect:
             print(PC.warn_box + "LinkedIn doesn't like something about this"
                   " login. Maybe you're being sneaky on a VPN or something."
                   " You may get an email with a verification token. You can"
@@ -281,7 +281,7 @@ def login(args):
     # the logon page. We detect this here.
     if '<title>LinkedIn Login' in response.text:
         print(PC.warn_box + "You've been returned to a login page. Check your"
-              " password and try again.\n")
+              " username and password and try again.\n")
         return False
 
     # If we make it past everything above, we have no idea what happened.
