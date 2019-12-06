@@ -21,7 +21,7 @@ import requests
 
                 ########## BEGIN GLOBAL DECLARATIONS ##########
 
-CURRENT_REL = '0.16'
+CURRENT_REL = '0.17'
 BANNER = r"""
 
                             .__  .__________
@@ -222,21 +222,21 @@ def login(args):
 
     # Our search and regex will work only with a mobile user agent and
     # the correct REST protocol specified below.
-    mobile_agent = ('Mozilla/5.0 (Linux; U; Android 2.2; en-us; Droid '
-                    'Build/FRG22D) AppleWebKit/533.1 (KHTML, like Gecko) '
-                    'Version/4.0 Mobile Safari/533.1')
+    mobile_agent = ('Mozilla/5.0 (Linux; U; Android 4.4.2; en-us; SCH-I535 '
+                    'Build/KOT49H) AppleWebKit/534.30 (KHTML, like Gecko) '
+                    'Version/4.0 Mobile Safari/534.30')
     session.headers.update({'User-Agent': mobile_agent,
                             'X-RestLi-Protocol-Version': '2.0.0'})
 
     # We wll grab an anonymous response to look for the CSRF token, which
     # is required for our logon attempt.
-    anon_response = session.get('https://www.linkedin.com/uas/login')
-    login_csrf = re.findall(r'name="loginCsrfParam".*?value="(.*?)"',
+    anon_response = session.get('https://www.linkedin.com/login')
+    login_csrf = re.findall(r'name="loginCsrfParam" value="(.*?)"',
                             anon_response.text)
     if login_csrf:
         login_csrf = login_csrf[0]
     else:
-        print("Having trouble with loading the page... try the command again.")
+        print("Having trouble loading login page... try the command again.")
         sys.exit()
 
     # Define the data we will POST for our login.
@@ -249,7 +249,7 @@ def login(args):
 
     # Perform the actual login. We disable redirects as we will use that 302
     # as an indicator of a successful logon.
-    response = session.post('https://www.linkedin.com/uas/login-submit'
+    response = session.post('https://www.linkedin.com/checkpoint/lg/login-submit'
                             '?loginSubmitSource=GUEST_HOME',
                             data=auth_payload, allow_redirects=False)
 
@@ -260,7 +260,7 @@ def login(args):
         if 'feed' in redirect:
             print(PC.ok_box + "Successfully logged in.\n")
             return session
-        if 'consumer-email-challenge' in redirect:
+        if 'challenge' in redirect:
             print(PC.warn_box + "LinkedIn doesn't like something about this"
                   " login. Maybe you're being sneaky on a VPN or something."
                   " You may get an email with a verification token. You can"
@@ -273,15 +273,15 @@ def login(args):
             return False
 
         # The below will detect some 302 that I don't yet know about.
-        print(PC.warn_box + "Some unknown error logging in. If this"
+        print(PC.warn_box + "Some unknown redirection occurred. If this"
               " persists, please open an issue on github.\n")
         return False
 
     # A failed logon doesn't generate a 302 at all, but simply reponds with
     # the logon page. We detect this here.
-    if '<title>Sign In</title>' in response.text:
+    if '<title>LinkedIn Login' in response.text:
         print(PC.warn_box + "You've been returned to a login page. Check your"
-              " password and try again.\n")
+              " username and password and try again.\n")
         return False
 
     # If we make it past everything above, we have no idea what happened.
@@ -314,7 +314,7 @@ def get_company_info(name, session):
     website_regex = r'companyPageUrl":"(http.*?)"'
     staff_regex = r'staffCount":([0-9]+),'
     id_regex = r'"objectUrn":"urn:li:company:([0-9]+)"'
-    desc_regex = r'localizedName":"(.*?)"'
+    desc_regex = r'tagline":"(.*?)"'
     escaped_name = urllib.parse.quote_plus(name)
 
     response = session.get(('https://www.linkedin.com'
