@@ -345,7 +345,7 @@ def get_company_info(name, session):
     # set generic strings as warnings.
     found_desc = re.findall(desc_regex, response.text)
     if not found_desc:
-        found_desc = ["RegEx issues, please open a ticket on GitHub!"]
+        found_desc = ["NOT FOUND"]
     found_staff = re.findall(staff_regex, response.text)
     if not found_staff:
         found_staff = ["RegEx issues, please open a ticket on GitHub!"]
