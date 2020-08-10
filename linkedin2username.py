@@ -30,7 +30,7 @@ BANNER = r"""
                             |  |_|  /       \|  |  /
                             |____/__\_______ \____/
                                linkedin2username
-    
+
                                    Spray away.
                               github.com/initstring
 
@@ -38,6 +38,7 @@ BANNER = r"""
 # The dictionary below is a best-effort attempt to spread a search load
 # across sets of geographic locations. This can bypass the 1000 result
 # search limit as we are now allowed 1000 per geo set.
+# developer.linkedin.com/docs/v1/companies/targeting-company-shares#additionalcodes
 GEO_REGIONS = {
     'r0':'us:0',
     'r1':'ca:0',
@@ -270,6 +271,11 @@ def login(args):
         if 'captcha' in redirect:
             print(PC.warn_box + "You've triggered a CAPTCHA. Oops. Try logging"
                   " in with your web browser first and come back later.")
+            return False
+        if 'add-phone' in redirect:
+            print(PC.warn_box + "LinkedIn is prompting to add your phone"
+                  " number to your profile. Please handle that in the web and"
+                  " then try again.")
             return False
 
         # The below will detect some 302 that I don't yet know about.
