@@ -281,6 +281,9 @@ def login(args):
         # The below will detect some 302 that I don't yet know about.
         print(PC.warn_box + "Some unknown redirection occurred. If this"
               " persists, please open an issue on github.\n")
+        print("DEBUG INFO:")
+        print("LOCATION: {}".format(redirect))
+        print("RESPONSE TEXT:\n{}".format(response.text))
         return False
 
     # A failed logon doesn't generate a 302 at all, but simply reponds with
@@ -294,6 +297,9 @@ def login(args):
     # Oh well, we fail.
     print(PC.warn_box + "Some unknown error logging in. If this persists,"
           "please open an issue on github.\n")
+    print("DEBUG INFO:")
+    print("RESPONSE CODE: {}".format(response.status_code))
+    print("RESPONSE TEXT:\n{}".format(response.text))
     return False
 
 
