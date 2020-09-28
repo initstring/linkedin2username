@@ -5,6 +5,8 @@ This is a pure web-scraper, no API key required. You use your valid LinkedIn use
 
 Use an account with a lot of connections, otherwise you'll get crappy results. Adding a couple connections at the target company should help - this tool will work up to third degree connections. Note that [LinkedIn will cap search results](https://www.linkedin.com/help/linkedin/answer/129/what-you-get-when-you-search-on-linkedin?lang=en) to 1000 employees max. You can use the features '--geoblast' or '--keywords' to bypass this limit. Look at help below for more details.
 
+**WARNING**: LinkedIn has recently (Sept 2020) been hitting li2u users with the monthly commercial search limit. It's a bit mysterious as to when/why this happens. When you hit the limit, you won't be able to search again until the 1st of the month. If you know of a workaround, please let me know.
+
 Here's what you get:
 - first.last.txt: Usernames like Joe.Schmoe
 - flast.txt:      Usernames like JSchmoe
