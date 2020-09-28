@@ -21,7 +21,7 @@ import requests
 
                 ########## BEGIN GLOBAL DECLARATIONS ##########
 
-CURRENT_REL = '0.17'
+CURRENT_REL = '0.18'
 BANNER = r"""
 
                             .__  .__________
