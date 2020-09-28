@@ -21,7 +21,7 @@ import requests
 
                 ########## BEGIN GLOBAL DECLARATIONS ##########
 
-CURRENT_REL = '0.17'
+CURRENT_REL = '0.18'
 BANNER = r"""
 
                             .__  .__________
@@ -520,6 +520,13 @@ def scrape_info(session, company_id, staff_count, args):
                                  current_keyword)
             first_name = re.findall(r'"firstName":"(.*?)"', result)
             last_name = re.findall(r'"lastName":"(.*?)"', result)
+
+            # Commercial Search Limit might be triggered
+            if "UPSELL_LIMIT" in result:
+                sys.stdout.write('\n')
+                print(PC.warn_box + "You've hit the commercial search limit!"
+                      " Try again on the 1st of the month. Sorry. :(")
+                break
 
             # If the list of names is empty for a page, we assume that
             # there are no more search results. Either you got them all or
