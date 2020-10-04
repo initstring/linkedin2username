@@ -21,7 +21,7 @@ import requests
 
                 ########## BEGIN GLOBAL DECLARATIONS ##########
 
-CURRENT_REL = '0.18'
+CURRENT_REL = '0.19'
 BANNER = r"""
 
                             .__  .__________
@@ -277,10 +277,15 @@ def login(args):
                   " number to your profile. Please handle that in the web and"
                   " then try again.")
             return False
+        if 'manage-account' in redirect:
+            print(PC.warn_box + "LinkedIn has some account notification for you"
+                  " to check. Plese log in first via the web and clear that.")
+            return False
 
         # The below will detect some 302 that I don't yet know about.
         print(PC.warn_box + "Some unknown redirection occurred. If this"
-              " persists, please open an issue on github.\n")
+              " persists, please open an issue on github wih the DEBUG"
+              " message below:\n")
         print("DEBUG INFO:")
         print("LOCATION: {}".format(redirect))
         print("RESPONSE TEXT:\n{}".format(response.text))
