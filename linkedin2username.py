@@ -281,6 +281,10 @@ def login(args):
             print(PC.warn_box + "LinkedIn has some account notification for you"
                   " to check. Plese log in first via the web and clear that.")
             return False
+        if 'add-email' in redirect:
+            print(PC.warn_box + "LinkedIn wants you to add an email address to"
+                  " your account. Log in via the web first and do that.")
+            return False
 
         # The below will detect some 302 that I don't yet know about.
         print(PC.warn_box + "Some unknown redirection occurred. If this"
