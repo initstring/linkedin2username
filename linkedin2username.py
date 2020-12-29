@@ -99,7 +99,7 @@ def parse_arguments():
     parser.add_argument('-n', '--domain', type=str, action='store',
                         default='',
                         help='Append a domain name to username output. '
-                        '[example: "-n uber.com" would ouput jschmoe@uber.com]'
+                        '[example: "-n uber.com" would output jschmoe@uber.com]'
                         )
     parser.add_argument('-d', '--depth', type=int, action='store',
                         default=False,
@@ -279,7 +279,7 @@ def login(args):
             return False
         if 'manage-account' in redirect:
             print(PC.warn_box + "LinkedIn has some account notification for you"
-                  " to check. Plese log in first via the web and clear that.")
+                  " to check. Please log in first via the web and clear that.")
             return False
         if 'add-email' in redirect:
             print(PC.warn_box + "LinkedIn wants you to add an email address to"
@@ -295,7 +295,7 @@ def login(args):
         print("RESPONSE TEXT:\n{}".format(response.text))
         return False
 
-    # A failed logon doesn't generate a 302 at all, but simply reponds with
+    # A failed logon doesn't generate a 302 at all, but simply responds with
     # the logon page. We detect this here.
     if '<title>LinkedIn Login' in response.text:
         print(PC.warn_box + "You've been returned to a login page. Check your"
@@ -323,7 +323,7 @@ def set_search_csrf(session):
 
 
 def get_company_info(name, session):
-    """Scapes basic company info.
+    """Scrapes basic company info.
 
     Note that not all companies fill in this info, so exceptions are provided.
     The company name can be found easily by browsing LinkedIn in a web browser,
@@ -345,7 +345,7 @@ def get_company_info(name, session):
     # Some geo regions are being fed a 'lite' version of LinkedIn mobile:
     # https://bit.ly/2vGcft0
     # The following bit is a temporary fix until I can figure out a
-    # low-maintenence solution that is inclusive of these areas.
+    # low-maintenance solution that is inclusive of these areas.
     if 'mwlite' in response.text:
         print(PC.warn_box + "You are being served the 'lite' version of"
               " LinkedIn (https://bit.ly/2vGcft0) that is not yet supported"
@@ -386,7 +386,7 @@ def get_company_info(name, session):
 
 
 def set_loops(staff_count, args):
-    """Defines total hits to the seach API.
+    """Defines total hits to the search API.
 
     Sets a maximum amount of loops based on either the number of staff
     discovered in the get_company_info function or the search depth argument
@@ -569,9 +569,9 @@ def remove_accents(raw_text):
     """Removes common accent characters.
 
     Our goal is to brute force login mechanisms, and I work primary with
-    companies deploying Engligh-language systems. From my experience, user
+    companies deploying English-language systems. From my experience, user
     accounts tend to be created without special accented characters. This
-    function tries to swap those out for standard Engligh alphabet.
+    function tries to swap those out for standard English alphabet.
     """
 
     raw_text = re.sub(u"[àáâãäå]", 'a', raw_text)
@@ -621,14 +621,14 @@ def clean(raw_list):
 def write_files(company, domain, name_list):
     """Writes data to various formatted output files.
 
-    After scraping and processing is complete, this function formates the raw
+    After scraping and processing is complete, this function formats the raw
     names into common username formats and writes them into a directory called
     'li2u-output'.
 
     See in-line comments for decisions made on handling special cases.
     """
 
-    # Check for and create an ouput directory to store the files.
+    # Check for and create an output directory to store the files.
     out_dir = 'li2u-output'
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
