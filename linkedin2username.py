@@ -529,6 +529,7 @@ def scrape_info(session, company_id, staff_count, args):
                                  current_keyword)
             first_name = re.findall(r'"firstName":"(.*?)"', result)
             last_name = re.findall(r'"lastName":"(.*?)"', result)
+            occupation = re.findall(r'"occupation":"(.*?)"', result)
 
             # Commercial Search Limit might be triggered
             if "UPSELL_LIMIT" in result:
@@ -549,10 +550,10 @@ def scrape_info(session, company_id, staff_count, args):
             # re.findall puts all first names and all last names in a list.
             # They are ordered, so the pairs should correspond with each other.
             # We parse through them all here, and see which ones are new to us.
-            for first, last in zip(first_name, last_name):
+            for first, last, job in zip(first_name, last_name, occupation):
                 full_name = first + ' ' + last
                 if full_name not in full_name_list:
-                    full_name_list.append(full_name)
+                    full_name_list.append((full_name,job))
                     new_names += 1
             sys.stdout.write("    " + PC.ok_box + "Added " + str(new_names) +
                              " new names. Running total: "\
@@ -594,7 +595,7 @@ def clean(raw_list):
     """
     clean_list = []
     allowed_chars = re.compile('[^a-zA-Z -]')
-    for name in raw_list:
+    for name,job in raw_list:
 
         # Try to transform non-English characters below.
         name = remove_accents(name)
@@ -613,7 +614,7 @@ def clean(raw_list):
 
         # If what is left is non-empty and unique, we add it to the list.
         if name and name not in clean_list:
-            clean_list.append(name)
+            clean_list.append((name,job))
 
     return clean_list
 
@@ -635,15 +636,15 @@ def write_files(company, domain, name_list):
 
     # Define all the files names we will be creating.
     files = {}
-    files['rawnames'] = open(out_dir + '/' + company + '-rawnames.txt', 'w')
-    files['flast'] = open(out_dir + '/' + company + '-flast.txt', 'w')
-    files['firstl'] = open(out_dir + '/' + company + '-firstl.txt', 'w')
-    files['firstlast'] = open(out_dir + '/' + company + '-first.last.txt', 'w')
-    files['fonly'] = open(out_dir + '/' + company + '-first.txt', 'w')
-    files['lastf'] = open(out_dir + '/' + company + '-lastf.txt', 'w')
+    files['rawnames'] = open(out_dir + '/' + company + '-rawnames.csv', 'w')
+    files['flast'] = open(out_dir + '/' + company + '-flast.csv', 'w')
+    files['firstl'] = open(out_dir + '/' + company + '-firstl.csv', 'w')
+    files['firstlast'] = open(out_dir + '/' + company + '-first.last.csv', 'w')
+    files['fonly'] = open(out_dir + '/' + company + '-first.csv', 'w')
+    files['lastf'] = open(out_dir + '/' + company + '-lastf.csv', 'w')
 
     # First, write all the raw names to a file.
-    for name in name_list:
+    for name,job in name_list:
         files['rawnames'].write(name + '\n')
 
         # Split the name on spaces and hyphens:
@@ -657,22 +658,21 @@ def write_files(company, domain, name_list):
         try:
             if len(parse) > 2:  # for users with more than one last name.
                 first, second, third = parse[0], parse[-2], parse[-1]
-                files['flast'].write(first[0] + second + domain + '\n')
-                files['flast'].write(first[0] + third + domain + '\n')
-                files['lastf'].write(second + first[0] + domain + '\n')
-                files['lastf'].write(third + first[0] + domain + '\n')
-                files['firstlast'].write(first + '.' + second + domain + '\n')
-                files['firstlast'].write(first + '.' + third + domain + '\n')
-                files['firstl'].write(first + second[0] + domain + '\n')
-                files['firstl'].write(first + third[0] + domain + '\n')
-                files['fonly'].write(first + domain + '\n')
+                files['flast'].write(first.capitalize() + ',' + second.capitalize() + ' ' + third.capitalize() + ',' + first[0] + third + domain + ',' + job + '\n')
+                files['lastf'].write(first.capitalize() + ',' + second.capitalize() + ' ' + third.capitalize() + ',' + second + first[0] + domain + ',' + job + '\n')
+                files['lastf'].write(first.capitalize() + ',' + second.capitalize() + ' ' + third.capitalize() + ',' + third + first[0] + domain + ',' + job + '\n')
+                files['firstlast'].write(first.capitalize() + ',' + second.capitalize() + ' ' + third.capitalize() + ',' + first + '.' + second + domain + ',' + job + '\n')
+                files['firstlast'].write(first.capitalize() + ',' + second.capitalize() + ' ' + third.capitalize() + ',' + first + '.' + third + domain + ',' + job + '\n')
+                files['firstl'].write(first.capitalize() + ',' + second.capitalize() + ' ' + third.capitalize() + ',' + first + second[0] + domain + ',' + job + '\n')
+                files['firstl'].write(first.capitalize() + ',' + second.capitalize() + ' ' + third.capitalize() + ',' + first + third[0] + domain + ',' + job + '\n')
+                files['fonly'].write(first.capitalize() + ',' + second.capitalize() + ' ' + third.capitalize() + ',' + first + domain + ',' + job + '\n')
             else:               # for users with only one last name
                 first, last = parse[0], parse[-1]
-                files['flast'].write(first[0] + last + domain + '\n')
-                files['lastf'].write(last + first[0] + domain + '\n')
-                files['firstlast'].write(first + '.' + last + domain + '\n')
-                files['firstl'].write(first + last[0] + domain + '\n')
-                files['fonly'].write(first + domain + '\n')
+                files['flast'].write(first.capitalize() + ',' + last.capitalize() + ',' + first[0] + last + domain + ',' + job + '\n')
+                files['lastf'].write(first.capitalize() + ',' + last.capitalize() + ',' + last + first[0] + domain + ',' + job + '\n')
+                files['firstlast'].write(first.capitalize() + ',' + last.capitalize() + ',' + first + '.' + last + domain + ',' + job + '\n')
+                files['firstl'].write(first.capitalize() + ',' + last.capitalize() + ',' + first + last[0] + domain + ',' + job + '\n')
+                files['fonly'].write(first.capitalize() + ',' + last.capitalize() + ',' + first + domain + ',' + job + '\n')
 
         # The exception below will try to weed out string processing errors
         # I've made in other parts of the program.
