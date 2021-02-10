@@ -9,6 +9,7 @@ Use an account with a lot of connections, otherwise you'll get crappy results. A
 
 Here's what you get:
 - first.last.txt: Usernames like Joe.Schmoe
+- f.last.txt:     Usernames like J.Schmoe
 - flast.txt:      Usernames like JSchmoe
 - firstl.txt:     Usernames like JoeS
 - first.txt       Usernames like Joe
