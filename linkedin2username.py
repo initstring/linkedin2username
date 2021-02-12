@@ -636,6 +636,7 @@ def write_files(company, domain, name_list):
     # Define all the files names we will be creating.
     files = {}
     files['rawnames'] = open(out_dir + '/' + company + '-rawnames.txt', 'w')
+    files['f.last'] = open(out_dir + '/' + company + '-f.last.txt', 'w')
     files['flast'] = open(out_dir + '/' + company + '-flast.txt', 'w')
     files['firstl'] = open(out_dir + '/' + company + '-firstl.txt', 'w')
     files['firstlast'] = open(out_dir + '/' + company + '-first.last.txt', 'w')
@@ -659,6 +660,8 @@ def write_files(company, domain, name_list):
                 first, second, third = parse[0], parse[-2], parse[-1]
                 files['flast'].write(first[0] + second + domain + '\n')
                 files['flast'].write(first[0] + third + domain + '\n')
+                files['f.last'].write(first[0] + '.' + second + domain + '\n')
+                files['f.last'].write(first[0] + '.' + third + domain + '\n')
                 files['lastf'].write(second + first[0] + domain + '\n')
                 files['lastf'].write(third + first[0] + domain + '\n')
                 files['firstlast'].write(first + '.' + second + domain + '\n')
@@ -669,6 +672,7 @@ def write_files(company, domain, name_list):
             else:               # for users with only one last name
                 first, last = parse[0], parse[-1]
                 files['flast'].write(first[0] + last + domain + '\n')
+                files['f.last'].write(first[0] + '.' + last + domain + '\n')
                 files['lastf'].write(last + first[0] + domain + '\n')
                 files['firstlast'].write(first + '.' + last + domain + '\n')
                 files['firstl'].write(first + last[0] + domain + '\n')
