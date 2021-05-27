@@ -596,6 +596,9 @@ def clean(raw_list):
     allowed_chars = re.compile('[^a-zA-Z -]')
     for name in raw_list:
 
+        # Lower-case everything to make it easier to de-duplicate.
+        name = name.lower()
+      
         # Try to transform non-English characters below.
         name = remove_accents(name)
 
@@ -603,9 +606,6 @@ def clean(raw_list):
         # A lot of users have funny things in their names, like () or ''
         # People like to feel special, I guess.
         name = allowed_chars.sub('', name)
-
-        # Lower-case everything to make it easier to de-duplicate.
-        name = name.lower()
 
         # The line below tries to consolidate white space between words
         # and get rid of leading/trailing spaces.
