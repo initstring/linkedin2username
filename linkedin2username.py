@@ -551,6 +551,12 @@ def scrape_info(session, company_id, staff_count, args):
             # We parse through them all here, and see which ones are new to us.
             for first, last in zip(first_name, last_name):
                 full_name = first + ' ' + last
+
+		# Off-By-One Running Total Patch: Ensures that a blank first and 
+                # last name are not added to the list of full names.
+                if len(full_name) <= 1:
+                    continue
+
                 if full_name not in full_name_list:
                     full_name_list.append(full_name)
                     new_names += 1
