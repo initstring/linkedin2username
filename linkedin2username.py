@@ -379,7 +379,7 @@ def get_company_info(name, session):
     print("          Desc:  " + found_desc[0])
     print("          Staff: " + str(found_staff[0]))
     print("          URL:   " + found_website[0])
-    print("\n" + PC.ok_box + "Hopefully that's the right {}! If not,"
+    print("\n" + PC.ok_box + "Hopefully that's the right {}! If not, "
           "double-check LinkedIn and try again.\n".format(name))
 
     return(found_id[0], int(found_staff[0]))
@@ -717,7 +717,7 @@ def main():
     write_files(args.company, args.domain, clean_list)
 
     # Time to get hacking.
-    print("\n\n" + PC.ok_box + "All done! Check out your lovely new files in"
+    print("\n\n" + PC.ok_box + "All done! Check out your lovely new files in "
           "the li2u-output directory.")
 
 
