@@ -552,7 +552,7 @@ def scrape_info(session, company_id, staff_count, args):
             for first, last in zip(first_name, last_name):
                 full_name = first + ' ' + last
 
-		# Off-By-One Running Total Patch: Ensures that a blank first and 
+                # Off-By-One Running Total Patch: Ensures that a blank first and 
                 # last name are not added to the list of full names.
                 if len(full_name) <= 1:
                     continue
