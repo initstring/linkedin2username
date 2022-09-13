@@ -17,6 +17,9 @@ import getpass
 from distutils.version import StrictVersion
 import urllib.parse
 import requests
+from http.cookiejar import MozillaCookieJar
+import json
+import datetime
 
 
                 ########## BEGIN GLOBAL DECLARATIONS ##########
@@ -55,7 +58,9 @@ GEO_REGIONS = {
            '|pr:0|tt:0|uy:0|ve:0'),
     'r12':'af:0|bh:0|il:0|jo:0|kw:0|pk:0|qa:0|sa:0|ae:0'}
 
+NETSCAPE_COOKIEJAR = "cookies_netscape.txt"
                  ########## END GLOBAL DECLARATIONS ##########
+
 
 if sys.version_info < (3, 0):
     print("\nSorry mate, you'll need to use Python 3+ on this one...\n")
@@ -86,7 +91,6 @@ def parse_arguments():
     parser = argparse.ArgumentParser(description=desc)
 
     parser.add_argument('-u', '--username', type=str, action='store',
-                        required=True,
                         help='A valid LinkedIn username.')
     parser.add_argument('-c', '--company', type=str, action='store',
                         required=True,
@@ -119,10 +123,14 @@ def parse_arguments():
                         'potentially bypassing the 1,000 record limit. '
                         '[example: "-k \'sales,human resources,information '
                         'technology\']')
+    parser.add_argument('-f', '--cookiefile', type=str, action="store",
+                        help='Path to a Netscape cookie file to import instead'
+                        ' of authenticating with username/password combo.')
     parser.add_argument('-g', '--geoblast', default=False, action="store_true",
                         help='Attempts to bypass the 1,000 record search limit'
                         ' by running multiple searches split across geographic'
                         ' regions.')
+    
 
     args = parser.parse_args()
 
@@ -143,10 +151,18 @@ def parse_arguments():
               "Use one or the other.")
         sys.exit()
 
+    # Either username or a cookie fill needs to be defined
+    if args.username == None and args.cookiefile == None:
+        print("Missing -u,--username or -f,--cookiefile arguments")
+        sys.exit()
+
+    # If we get a cookiefile then we can just continue without the password
+    if args.cookiefile != None:
+        return args
+    
     # If password is not passed in the command line, prompt for it
     # in a more secure fashion (not shown on screen)
     args.password = args.password or getpass.getpass()
-
     return args
 
 
@@ -194,6 +210,21 @@ def check_li2u_version():
               .format(CURRENT_REL, latest_rel))
         return
 
+def parseCookieFile(cookiefile):
+    """Parse a Netscape cookies file and return a dictionary of key value pairs
+    compatible with requests."""
+
+    cookies = []
+    with open (cookiefile, 'r') as fp:
+        for line in fp:
+            if not re.match(r'^\#', line):
+                lineFields = line.strip().split('\t')
+                subCookie = {}
+                subCookie["domain"] = lineFields[0]
+                subCookie["key"] = lineFields[5]
+                subCookie["value"] = lineFields[6]
+                cookies.append(subCookie)
+    return cookies
 
 def login(args):
     """Creates a new authenticated session.
@@ -211,6 +242,27 @@ def login(args):
     """
     session = requests.session()
 
+    # Cookie file was passed in
+    if args.cookiefile != None:
+        if os.path.exists(args.cookiefile):
+
+            # Parse cookies from file
+            try:
+                cookies = parseCookieFile(args.cookiefile)
+            except Exception as e:
+                print("Failed to parse the cookie file: {0}".format(args.cookiefile))
+                print(str(e))
+                sys.exit(1)
+
+            # Add cookies to our session object
+            for cookie in cookies:
+                cookie_obj = requests.cookies.create_cookie(domain=cookie["domain"],name=cookie["key"],value=cookie["value"])
+                session.cookies.set_cookie(cookie_obj)
+
+            return session
+        else:
+            print("Cookie file {0} does not exist".format(args.cookiefile))
+            sys.exit(1)
     # Special options below when using a proxy server. Helpful for debugging
     # the application in Burp Suite.
     if args.proxy:
