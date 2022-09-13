@@ -33,42 +33,41 @@ $ python linkedin2username.py myname@email.com uber-com -d 5 -n 'uber.com'
 
 # Full Help
 ```
-usage: linkedin2username.py [-h] [-p PASSWORD] [-n DOMAIN] [-d DEPTH]
-                            [-s SLEEP]
-                            username company
+usage: linkedin2username.py [-h] [-u USERNAME] -c COMPANY [-p PASSWORD] [-n DOMAIN] [-d DEPTH] [-s SLEEP] [-x PROXY]
+                            [-k KEYWORDS] [-f COOKIEFILE] [-g]
 
-positional arguments:
-  username              A valid LinkedIn username.
-  company               Company name.
+OSINT tool to generate lists of probable usernames from a given company's LinkedIn page. This tool may break when LinkedIn
+changes their site. Please open issues on GitHub to report any inconsistencies, and they will be quickly fixed.
 
 optional arguments:
   -h, --help            show this help message and exit
+  -u USERNAME, --username USERNAME
+                        A valid LinkedIn username.
+  -c COMPANY, --company COMPANY
+                        Company name exactly as typed in the company linkedin profile page URL.
   -p PASSWORD, --password PASSWORD
-                        Specify your password on in clear-text on the command
-                        line. If not specified, will prompt and not display on
-                        screen.
+                        Specify your password in clear-text on the command line. If not specified, will prompt and obfuscate as    
+                        you type.
   -n DOMAIN, --domain DOMAIN
-                        Append a domain name to username output. [example: '-n
-                        uber.com' would ouput jschmoe@uber.com]
+                        Append a domain name to username output. [example: "-n uber.com" would output jschmoe@uber.com]
   -d DEPTH, --depth DEPTH
-                        Search depth. If unset, will try to grab them all.
+                        Search depth (how many loops of 25). If unset, will try to grab them all.
   -s SLEEP, --sleep SLEEP
-                        Seconds to sleep between pages. defaults to 3.
+                        Seconds to sleep between search loops. Defaults to 0.
   -x PROXY, --proxy PROXY
-                        HTTPS proxy server to use. Example: "-p
-                        https://localhost:8080" WARNING: WILL DISABLE SSL
-                        VERIFICATION.
-
+                        Proxy server to use. WARNING: WILL DISABLE SSL VERIFICATION. [example: "-p https://localhost:8080"]        
   -k KEYWORDS, --keywords KEYWORDS
-                        Filter results by a a list of command separated
-                        keywords. Will do a separate loop for each keyword,
-                        potentially bypassing the 1,000 record limit.
-                        [example: "-k 'sales,human resources,information
+                        Filter results by a a list of command separated keywords. Will do a separate loop for each keyword,        
+                        potentially bypassing the 1,000 record limit. [example: "-k 'sales,human resources,information
                         technology']
-  -g, --geoblast        Attempts to bypass the 1,000 record search limit by
-                        running multiple searches split across geographic
+  -f COOKIEFILE, --cookiefile COOKIEFILE
+                        Path to a Netscape cookie file to import instead of authenticating with username/password combo.
+  -g, --geoblast        Attempts to bypass the 1,000 record search limit by running multiple searches split across geographic      
                         regions.
 ```
+
+# Scripts
+`convertCookies.py` - Convert a json cookie file to a Netscape cookie file. Helpful to convert a cookie export from a web browser extension such as [cookie-editor](https://github.com/moustachauve/cookie-editor)
 
 # Toubleshooting
 Sometimes LinkedIn does weird stuff or returns weird results. Sometimes it doesn't like you logging in from new locations. If something looks off, run the tool once or twice more. If it still isn't working, please open an issue.
