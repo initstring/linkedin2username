@@ -33,36 +33,47 @@ $ python linkedin2username.py myname@email.com uber-com -d 5 -n 'uber.com'
 
 # Full Help
 ```
-usage: linkedin2username.py [-h] [-u USERNAME] -c COMPANY [-p PASSWORD] [-n DOMAIN] [-d DEPTH] [-s SLEEP] [-x PROXY]
-                            [-k KEYWORDS] [-f COOKIEFILE] [-g]
+usage: linkedin2username.py [-h] [-u USERNAME] -c COMPANY [-p PASSWORD] 
+[-n DOMAIN] [-d DEPTH] [-s SLEEP] [-x PROXY] [-k KEYWORDS] [-f COOKIEFILE]
+[-g]
 
-OSINT tool to generate lists of probable usernames from a given company's LinkedIn page. This tool may break when LinkedIn
-changes their site. Please open issues on GitHub to report any inconsistencies, and they will be quickly fixed.
+OSINT tool to generate lists of probable usernames from a given company's
+LinkedIn page. This tool may break when LinkedIn changes their site. Please
+open issues on GitHub to report any inconsistencies, and they will be quickly
+fixed.
 
 optional arguments:
   -h, --help            show this help message and exit
   -u USERNAME, --username USERNAME
                         A valid LinkedIn username.
   -c COMPANY, --company COMPANY
-                        Company name exactly as typed in the company linkedin profile page URL.
+                        Company name exactly as typed in the company linkedin
+                        profile page URL.
   -p PASSWORD, --password PASSWORD
-                        Specify your password in clear-text on the command line. If not specified, will prompt and obfuscate as    
-                        you type.
+                        Specify your password in clear-text on the command
+                        line. If not specified, will prompt and obfuscate as you type.
   -n DOMAIN, --domain DOMAIN
-                        Append a domain name to username output. [example: "-n uber.com" would output jschmoe@uber.com]
+                        Append a domain name to username output. [example: "-n
+                        uber.com" would output jschmoe@uber.com]
   -d DEPTH, --depth DEPTH
-                        Search depth (how many loops of 25). If unset, will try to grab them all.
+                        Search depth (how many loops of 25). If unset, will try
+                        to grab them all.
   -s SLEEP, --sleep SLEEP
                         Seconds to sleep between search loops. Defaults to 0.
   -x PROXY, --proxy PROXY
-                        Proxy server to use. WARNING: WILL DISABLE SSL VERIFICATION. [example: "-p https://localhost:8080"]        
+                        Proxy server to use. WARNING: WILL DISABLE SSL
+                        VERIFICATION. [example: "-p https://localhost:8080"]        
   -k KEYWORDS, --keywords KEYWORDS
-                        Filter results by a a list of command separated keywords. Will do a separate loop for each keyword,        
-                        potentially bypassing the 1,000 record limit. [example: "-k 'sales,human resources,information
-                        technology']
+                        Filter results by a a list of command separated
+                        keywords. Will do a separate loop for each keyword,
+                        potentially bypassing the 1,000 record limit. 
+                        [example: 
+                        "-k 'sales,humanresources,informationtechnology']
   -f COOKIEFILE, --cookiefile COOKIEFILE
-                        Path to a Netscape cookie file to import instead of authenticating with username/password combo.
-  -g, --geoblast        Attempts to bypass the 1,000 record search limit by running multiple searches split across geographic      
+                        Path to a Netscape cookie file to import instead of
+                        authenticating with username/password combo.
+  -g, --geoblast        Attempts to bypass the 1,000 record search limit by
+                        running multiple searches split across geographic
                         regions.
 ```
 
