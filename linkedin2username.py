@@ -14,7 +14,6 @@ import re
 import time
 import argparse
 import getpass
-from distutils.version import StrictVersion
 import urllib.parse
 import requests
 
@@ -148,51 +147,6 @@ def parse_arguments():
     args.password = args.password or getpass.getpass()
 
     return args
-
-
-def check_li2u_version():
-    """Checks GitHub for a new version
-
-    Uses a simple regex to look at the 'releases' page on GitHub. Extracts the
-    First tag found and assumes it is the latest. Compares with the global
-    variable CURRENT_TAG and informs if a new version is available.
-    """
-    latest_rel_regex = r'/initstring/linkedin2username/tree/(.*?)"'
-    session = requests.session()
-    rel_url = 'https://github.com/initstring/linkedin2username/releases'
-    rel_chars = re.compile(r'[^0-9\.]')
-
-    # Scrape the page and grab the regex.
-    response = session.get(rel_url)
-    latest_rel = re.findall(latest_rel_regex, response.text)
-
-    # Remove characters from tag name that will mess up version comparison.
-    # Also just continue if we can't find the tags - we don't want that small
-    # function to break the entire app.
-    if latest_rel[0]:
-        latest_rel = rel_chars.sub('', latest_rel[0])
-    else:
-        return
-
-    # Check the tag found with the one defined in this script.
-    if CURRENT_REL == latest_rel:
-        print("")
-        print(PC.ok_box + "Using version {}, which is the latest on"
-              " GitHub.\n".format(CURRENT_REL))
-        return
-    if StrictVersion(CURRENT_REL) > StrictVersion(latest_rel):
-        print("")
-        print(PC.warn_box + "Using version {}, which is NEWER than {}, the"
-              " latest official release. Good luck!\n"
-              .format(CURRENT_REL, latest_rel))
-        return
-    if StrictVersion(CURRENT_REL) < StrictVersion(latest_rel):
-        print("")
-        print(PC.warn_box + "You are using {}, but {} is available.\n"
-              "    LinkedIn changes often - this version may not work.\n"
-              "    https://github.com/initstring/linkedin2username.\n"
-              .format(CURRENT_REL, latest_rel))
-        return
 
 
 def login(args):
@@ -699,9 +653,6 @@ def main():
     """Main Function"""
     print(BANNER + "\n\n\n")
     args = parse_arguments()
-
-    # Check the version
-    check_li2u_version()
 
     # Instantiate a session by logging in to LinkedIn.
     session = login(args)
