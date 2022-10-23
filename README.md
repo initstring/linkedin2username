@@ -68,6 +68,8 @@ optional arguments:
   -g, --geoblast        Attempts to bypass the 1,000 record search limit by
                         running multiple searches split across geographic
                         regions.
+  -o OUTPUT, --output OUTPUT
+                        Specified Output Directory
 ```
 
 # Toubleshooting
