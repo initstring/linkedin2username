@@ -672,8 +672,6 @@ def main():
     clean_list = clean(found_names)
 
     # Write the data to some files.
-    # Just missing passing variable (argument) to write_files function @C0axx
-
     write_files(args.company, args.domain, clean_list, args.output)
 
     # Time to get hacking.
