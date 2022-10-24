@@ -674,7 +674,7 @@ def main():
     write_files(args.company, args.domain, clean_list, args.output)
 
     # Time to get hacking.
-    print("\n\n" + PC.ok_box + "All done! Check out your lovely new files in" + args.output)
+    print("\n\n" + PC.ok_box + "All done! Check out your lovely new files in " + args.output)
 
 
 if __name__ == "__main__":
