@@ -122,8 +122,7 @@ def parse_arguments():
                         help='Attempts to bypass the 1,000 record search limit'
                         ' by running multiple searches split across geographic'
                         ' regions.')
-    parser.add_argument('-o', '--output', default=False, action="store", required=True,
-                        type=str, help='Output Directory')
+    parser.add_argument('-o', '--output', default="li2u-output", action="store", type=str, help='Output directory.')
 
 
     args = parser.parse_args()
