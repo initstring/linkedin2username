@@ -68,6 +68,8 @@ optional arguments:
   -g, --geoblast        Attempts to bypass the 1,000 record search limit by
                         running multiple searches split across geographic
                         regions.
+  -o OUTPUT, --output OUTPUT
+                        Output Directory, defaults to li2u-output
 ```
 
 # Toubleshooting

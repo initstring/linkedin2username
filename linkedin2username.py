@@ -122,6 +122,8 @@ def parse_arguments():
                         help='Attempts to bypass the 1,000 record search limit'
                         ' by running multiple searches split across geographic'
                         ' regions.')
+    parser.add_argument('-o', '--output', default="li2u-output", action="store",
+                        help='Output Directory, defaults to li2u-output')
 
     args = parser.parse_args()
 
@@ -576,20 +578,19 @@ def clean(raw_list):
             clean_list.append(name)
 
     return clean_list
+  
 
-
-def write_files(company, domain, name_list):
+def write_files(company, domain, name_list, out_dir):
     """Writes data to various formatted output files.
 
     After scraping and processing is complete, this function formats the raw
     names into common username formats and writes them into a directory called
-    'li2u-output'.
+    li2u-output unless specified.
 
     See in-line comments for decisions made on handling special cases.
     """
 
     # Check for and create an output directory to store the files.
-    out_dir = 'li2u-output'
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
 
@@ -671,11 +672,11 @@ def main():
     clean_list = clean(found_names)
 
     # Write the data to some files.
-    write_files(args.company, args.domain, clean_list)
+    write_files(args.company, args.domain, clean_list, args.output)
 
     # Time to get hacking.
     print("\n\n" + PC.ok_box + "All done! Check out your lovely new files in "
-          "the li2u-output directory.")
+          + args.output)
 
 
 if __name__ == "__main__":
