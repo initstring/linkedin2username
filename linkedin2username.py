@@ -584,7 +584,8 @@ def write_files(company, domain, name_list, out_dir):
     """Writes data to various formatted output files.
 
     After scraping and processing is complete, this function formats the raw
-    names into common username formats and writes them into a directory called li2u-output unless specified.
+    names into common username formats and writes them into a directory called
+    li2u-output unless specified.
 
     See in-line comments for decisions made on handling special cases.
     """
