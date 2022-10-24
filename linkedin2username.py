@@ -580,8 +580,6 @@ def clean(raw_list):
 
     return clean_list
   
-# Function needs to expect the variable so add it
-# old: def write_files(company, domain, name_list)
 
 def write_files(company, domain, name_list, out_dir):
     """Writes data to various formatted output files.
