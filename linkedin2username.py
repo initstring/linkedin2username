@@ -590,7 +590,6 @@ def write_files(company, domain, name_list, out_dir):
     See in-line comments for decisions made on handling special cases.
     """
 
-    # Original never declared any variables ...now args.output is simply out_dir
     # Check for and create an output directory to store the files.
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
