@@ -69,7 +69,7 @@ optional arguments:
                         running multiple searches split across geographic
                         regions.
   -o OUTPUT, --output OUTPUT
-                        Specified Output Directory, defaults to li2u-output
+                        Output Directory, defaults to li2u-output
 ```
 
 # Toubleshooting
