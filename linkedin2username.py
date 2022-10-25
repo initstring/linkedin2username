@@ -229,10 +229,12 @@ def login(args):
                   " in with your web browser first and come back later.")
             return False
         if 'add-phone' in redirect:
-            print(PC.warn_box + "LinkedIn is prompting to add your phone"
-                  " number to your profile. Please handle that in the web and"
-                  " then try again.")
-            return False
+            # Skip the prompt to add a phone number
+            response = session.post('https://www.linkedin.com/checkpoint/post-login/security/dismiss-phone-event')
+            if response.status_code != 200:
+                print(PC.warn_box + "Could not skip phone prompt. Please log in via the web app first and then try again.\n")
+                return False
+            return True
         if 'manage-account' in redirect:
             print(PC.warn_box + "LinkedIn has some account notification for you"
                   " to check. Please log in first via the web and clear that.")
