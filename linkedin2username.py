@@ -17,10 +17,6 @@ import getpass
 import urllib.parse
 import requests
 
-
-                ########## BEGIN GLOBAL DECLARATIONS ##########
-
-CURRENT_REL = '0.21'
 BANNER = r"""
 
                             .__  .__________
@@ -34,31 +30,26 @@ BANNER = r"""
                               github.com/initstring
 
 """
+
 # The dictionary below is a best-effort attempt to spread a search load
 # across sets of geographic locations. This can bypass the 1000 result
 # search limit as we are now allowed 1000 per geo set.
 # developer.linkedin.com/docs/v1/companies/targeting-company-shares#additionalcodes
 GEO_REGIONS = {
-    'r0':'us:0',
-    'r1':'ca:0',
-    'r2':'gb:0',
-    'r3':'au:0|nz:0',
-    'r4':'cn:0|hk:0',
-    'r5':'jp:0|kr:0|my:0|np:0|ph:0|sg:0|lk:0|tw:0|th:0|vn:0',
-    'r6':'in:0',
-    'r7':'at:0|be:0|bg:0|hr:0|cz:0|dk:0|fi:0',
-    'r8':'fr:0|de:0',
-    'r9':'gr:0|hu:0|ie:0|it:0|lt:0|nl:0|no:0|pl:0|pt:0',
-    'r10':'ro:0|ru:0|rs:0|sk:0|es:0|se:0|ch:0|tr:0|ua:0',
-    'r11':('ar:0|bo:0|br:0|cl:0|co:0|cr:0|do:0|ec:0|gt:0|mx:0|pa:0|pe:0'
-           '|pr:0|tt:0|uy:0|ve:0'),
-    'r12':'af:0|bh:0|il:0|jo:0|kw:0|pk:0|qa:0|sa:0|ae:0'}
-
-                 ########## END GLOBAL DECLARATIONS ##########
-
-if sys.version_info < (3, 0):
-    print("\nSorry mate, you'll need to use Python 3+ on this one...\n")
-    sys.exit(1)
+    'r0': 'us:0',
+    'r1': 'ca:0',
+    'r2': 'gb:0',
+    'r3': 'au:0|nz:0',
+    'r4': 'cn:0|hk:0',
+    'r5': 'jp:0|kr:0|my:0|np:0|ph:0|sg:0|lk:0|tw:0|th:0|vn:0',
+    'r6': 'in:0',
+    'r7': 'at:0|be:0|bg:0|hr:0|cz:0|dk:0|fi:0',
+    'r8': 'fr:0|de:0',
+    'r9': 'gr:0|hu:0|ie:0|it:0|lt:0|nl:0|no:0|pl:0|pt:0',
+    'r10': 'ro:0|ru:0|rs:0|sk:0|es:0|se:0|ch:0|tr:0|ua:0',
+    'r11': ('ar:0|bo:0|br:0|cl:0|co:0|cr:0|do:0|ec:0|gt:0|mx:0|pa:0|pe:0'
+            '|pr:0|tt:0|uy:0|ve:0'),
+    'r12': 'af:0|bh:0|il:0|jo:0|kw:0|pk:0|qa:0|sa:0|ae:0'}
 
 
 class PC:
@@ -128,7 +119,7 @@ def parse_arguments():
     args = parser.parse_args()
 
     # Proxy argument is fed to requests as a dictionary, setting this now:
-    args.proxy_dict = {"https" : args.proxy}
+    args.proxy_dict = {"https": args.proxy}
 
     # If appending an email address, preparing this string now:
     if args.domain:
@@ -340,7 +331,7 @@ def get_company_info(name, session):
     print("\n" + PC.ok_box + "Hopefully that's the right {}! If not, "
           "double-check LinkedIn and try again.\n".format(name))
 
-    return(found_id[0], int(found_staff[0]))
+    return (found_id[0], int(found_staff[0]))
 
 
 def set_loops(staff_count, args):
@@ -406,7 +397,7 @@ def get_results(session, company_id, page, region, keyword):
     # When using the --geoblast feature, we need to inject our set of region
     # codes into the search parameter.
     if region:
-        region = re.sub(':', '%3A', region) # must URL encode this parameter
+        region = re.sub(':', '%3A', region)  # must URL encode this parameter
 
     # Build the base search URL.
     url = ('https://www.linkedin.com'
@@ -477,7 +468,7 @@ def scrape_info(session, company_id, staff_count, args):
             current_region = ''
             current_keyword = ''
 
-        ## This is the inner loop. It will search results 25 at a time.
+        # This is the inner loop. It will search results 25 at a time.
         for page in range(0, args.depth):
             new_names = 0
             sys.stdout.flush()
@@ -510,7 +501,7 @@ def scrape_info(session, company_id, staff_count, args):
             for first, last in zip(first_name, last_name):
                 full_name = first + ' ' + last
 
-                # Off-By-One Running Total Patch: Ensures that a blank first and 
+                # Off-By-One Running Total Patch: Ensures that a blank first and
                 # last name are not added to the list of full names.
                 if len(full_name) <= 1:
                     continue
@@ -519,7 +510,7 @@ def scrape_info(session, company_id, staff_count, args):
                     full_name_list.append(full_name)
                     new_names += 1
             sys.stdout.write("    " + PC.ok_box + "Added " + str(new_names) +
-                             " new names. Running total: "\
+                             " new names. Running total: "
                              + str(len(full_name_list)) + "              \r")
 
             # If the user has defined a sleep between loops, we take a little
@@ -562,7 +553,7 @@ def clean(raw_list):
 
         # Lower-case everything to make it easier to de-duplicate.
         name = name.lower()
-      
+
         # Try to transform non-English characters below.
         name = remove_accents(name)
 
@@ -580,7 +571,7 @@ def clean(raw_list):
             clean_list.append(name)
 
     return clean_list
-  
+
 
 def write_files(company, domain, name_list, out_dir):
     """Writes data to various formatted output files.
