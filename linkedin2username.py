@@ -52,6 +52,7 @@ GEO_REGIONS = {
             '|pr:0|tt:0|uy:0|ve:0'),
     'r12': 'af:0|bh:0|il:0|jo:0|kw:0|pk:0|qa:0|sa:0|ae:0'}
 
+
 def parse_arguments():
     """
     Handle user-supplied arguments
@@ -338,8 +339,7 @@ def set_loops(staff_count, args):
     # loops to the amount of staff / 25 +1 more to catch remainders.
     loops = int((staff_count / 25) + 1)
 
-    print(f"[*] Company has {staff_count} profiles to check. Some may be"
-                      " anonymous.")
+    print(f"[*] Company has {staff_count} profiles to check. Some may be anonymous.")
 
     # The lines below attempt to detect large result sets and compare that
     # with the command line arguments passed. The goal is to warn when you
