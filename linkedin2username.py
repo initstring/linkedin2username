@@ -119,8 +119,7 @@ def parse_arguments():
 
     # These two functions are not currently compatible, squashing this now:
     if args.keywords and args.geoblast:
-        print("Sorry, keywords and geoblast are currently not compatible. "
-              "Use one or the other.")
+        print("Sorry, keywords and geoblast are currently not compatible. Use one or the other.")
         sys.exit()
 
     # If password is not passed in the command line, prompt for it
@@ -207,26 +206,23 @@ def login(args):
             return False
         if 'add-phone' in redirect:
             # Skip the prompt to add a phone number
-            dismiss_url = 'https://www.linkedin.com/checkpoint/post-login/security/dismiss-phone-event'
-            response = session.post(dismiss_url)
+            url = 'https://www.linkedin.com/checkpoint/post-login/security/dismiss-phone-event'
+            response = session.post(url)
             if response.status_code != 200:
-                print("[!] Could not skip phone prompt. "
-                      "Please log in via the web app first and then try again.\n")
+                print("[!] Could not skip phone prompt. Log in via the web and then try again.\n")
                 return False
             return True
         if 'manage-account' in redirect:
-            print("[!] LinkedIn has some account notification for you"
-                  " to check. Please log in first via the web and clear that.")
+            print("[!] LinkedIn has some account notification. Log in via the web and clear that.")
             return False
         if 'add-email' in redirect:
-            print("[!] LinkedIn wants you to add an email address to"
-                  " your account. Log in via the web first and do that.")
+            print("[!] LinkedIn wants you to add an email address to your account. "
+                  "Log in via the web first and do that.")
             return False
 
         # The below will detect some 302 that I don't yet know about.
-        print("[!] Some unknown redirection occurred. If this"
-              " persists, please open an issue on github wih the DEBUG"
-              " message below:\n")
+        print("[!] Some unknown redirection occurred. If this persists, please open an issue "
+              "and include the info below:")
         print("DEBUG INFO:")
         print(f"LOCATION: {redirect}")
         print(f"RESPONSE TEXT:\n{response.text}")
@@ -235,14 +231,12 @@ def login(args):
     # A failed logon doesn't generate a 302 at all, but simply responds with
     # the logon page. We detect this here.
     if '<title>LinkedIn Login' in response.text:
-        print("[!] You've been returned to a login page. Check your"
-              " username and password and try again.\n")
+        print("[!] Check your username and password and try again.\n")
         return False
 
     # If we make it past everything above, we have no idea what happened.
     # Oh well, we fail.
-    print("[!] Some unknown error logging in. If this persists,"
-          "please open an issue on github.\n")
+    print("[!] Some unknown error logging in. If this persists, please open an issue on github.\n")
     print("DEBUG INFO:")
     print(f"RESPONSE CODE: {response.status_code}")
     print(f"RESPONSE TEXT:\n{response.text}")
@@ -295,8 +289,7 @@ def get_company_info(name, session):
     # program cannot succeed and must exit.
     found_id = re.findall(id_regex, response.text)
     if not found_id:
-        print("[!] Could not find that company name. Please"
-              " double-check LinkedIn and try again.")
+        print("[!] Could not find that company name. Please double-check LinkedIn and try again.")
         sys.exit()
 
     # Below we will try to scrape metadata on the company. If not found, will
@@ -316,8 +309,7 @@ def get_company_info(name, session):
     print("          Desc:  " + found_desc[0])
     print("          Staff: " + str(found_staff[0]))
     print("          URL:   " + found_website[0])
-    print(f"\n[*] Hopefully that's the right {name}! If not, "
-          "double-check LinkedIn and try again.\n")
+    print(f"\n[*] Hopefully that's the right {name}! If not, check LinkedIn and try again.\n")
 
     return (found_id[0], int(found_staff[0]))
 
@@ -474,8 +466,7 @@ def scrape_info(session, company_id, staff_count, args):
             # you are not connected enough to get them all.
             if not first_name and not last_name:
                 sys.stdout.write('\n')
-                print("[*] We have hit the end of the road!"
-                      " Moving on...")
+                print("[*] We have hit the end of the road! Moving on...")
                 break
 
             # re.findall puts all first names and all last names in a list.
