@@ -16,6 +16,7 @@ import argparse
 import getpass
 import urllib.parse
 import requests
+from requests.packages.urllib3.exceptions import InsecureRequestWarning
 
 BANNER = r"""
 
@@ -50,19 +51,6 @@ GEO_REGIONS = {
     'r11': ('ar:0|bo:0|br:0|cl:0|co:0|cr:0|do:0|ec:0|gt:0|mx:0|pa:0|pe:0'
             '|pr:0|tt:0|uy:0|ve:0'),
     'r12': 'af:0|bh:0|il:0|jo:0|kw:0|pk:0|qa:0|sa:0|ae:0'}
-
-
-class PC:
-    """PC (Print Color)
-    Used to generate some colorful, relevant, nicely formatted status messages.
-    """
-    green = '\033[92m'
-    blue = '\033[94m'
-    orange = '\033[93m'
-    endc = '\033[0m'
-    ok_box = blue + '[*] ' + endc
-    note_box = green + '[+] ' + endc
-    warn_box = orange + '[!] ' + endc
 
 
 def parse_arguments():
@@ -161,10 +149,8 @@ def login(args):
     # Special options below when using a proxy server. Helpful for debugging
     # the application in Burp Suite.
     if args.proxy:
-        print(PC.warn_box + "Using a proxy, ignoring SSL errors."
-              " Don't get pwned.")
+        print("[!] Using a proxy, ignoring SSL errors. Don't get pwned.")
         session.verify = False
-        from requests.packages.urllib3.exceptions import InsecureRequestWarning
         requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
         session.proxies.update(args.proxy_dict)
 
@@ -203,61 +189,63 @@ def login(args):
 
     # Define a successful login by the 302 redirect to the 'feed' page. Try
     # to detect some other common logon failures and alert the user.
-    if response.status_code == 302 or response.status_code == 303:
+    if response.status_code in (302, 303):
         redirect = response.headers['Location']
         if 'feed' in redirect:
-            print(PC.ok_box + "Successfully logged in.\n")
+            print("[*] Successfully logged in.\n")
             return session
         if 'challenge' in redirect:
-            print(PC.warn_box + "LinkedIn doesn't like something about this"
+            print("[!] LinkedIn doesn't like something about this"
                   " login. Maybe you're being sneaky on a VPN or something."
                   " You may get an email with a verification token. You can"
                   " ignore the email. Log in from a web browser and try"
                   " again.\n")
             return False
         if 'captcha' in redirect:
-            print(PC.warn_box + "You've triggered a CAPTCHA. Oops. Try logging"
+            print("[!] You've triggered a CAPTCHA. Oops. Try logging"
                   " in with your web browser first and come back later.")
             return False
         if 'add-phone' in redirect:
             # Skip the prompt to add a phone number
-            response = session.post('https://www.linkedin.com/checkpoint/post-login/security/dismiss-phone-event')
+            dismiss_url = 'https://www.linkedin.com/checkpoint/post-login/security/dismiss-phone-event'
+            response = session.post(dismiss_url)
             if response.status_code != 200:
-                print(PC.warn_box + "Could not skip phone prompt. Please log in via the web app first and then try again.\n")
+                print("[!] Could not skip phone prompt. "
+                      "Please log in via the web app first and then try again.\n")
                 return False
             return True
         if 'manage-account' in redirect:
-            print(PC.warn_box + "LinkedIn has some account notification for you"
+            print("[!] LinkedIn has some account notification for you"
                   " to check. Please log in first via the web and clear that.")
             return False
         if 'add-email' in redirect:
-            print(PC.warn_box + "LinkedIn wants you to add an email address to"
+            print("[!] LinkedIn wants you to add an email address to"
                   " your account. Log in via the web first and do that.")
             return False
 
         # The below will detect some 302 that I don't yet know about.
-        print(PC.warn_box + "Some unknown redirection occurred. If this"
+        print("[!] Some unknown redirection occurred. If this"
               " persists, please open an issue on github wih the DEBUG"
               " message below:\n")
         print("DEBUG INFO:")
-        print("LOCATION: {}".format(redirect))
-        print("RESPONSE TEXT:\n{}".format(response.text))
+        print(f"LOCATION: {redirect}")
+        print(f"RESPONSE TEXT:\n{response.text}")
         return False
 
     # A failed logon doesn't generate a 302 at all, but simply responds with
     # the logon page. We detect this here.
     if '<title>LinkedIn Login' in response.text:
-        print(PC.warn_box + "You've been returned to a login page. Check your"
+        print("[!] You've been returned to a login page. Check your"
               " username and password and try again.\n")
         return False
 
     # If we make it past everything above, we have no idea what happened.
     # Oh well, we fail.
-    print(PC.warn_box + "Some unknown error logging in. If this persists,"
+    print("[!] Some unknown error logging in. If this persists,"
           "please open an issue on github.\n")
     print("DEBUG INFO:")
-    print("RESPONSE CODE: {}".format(response.status_code))
-    print("RESPONSE TEXT:\n{}".format(response.text))
+    print(f"RESPONSE CODE: {response.status_code}")
+    print(f"RESPONSE TEXT:\n{response.text}")
     return False
 
 
@@ -296,7 +284,7 @@ def get_company_info(name, session):
     # The following bit is a temporary fix until I can figure out a
     # low-maintenance solution that is inclusive of these areas.
     if 'mwlite' in response.text:
-        print(PC.warn_box + "You are being served the 'lite' version of"
+        print("[!] You are being served the 'lite' version of"
               " LinkedIn (https://bit.ly/2vGcft0) that is not yet supported"
               " by this tool. Please try again using a VPN exiting from USA,"
               " EU, or Australia.")
@@ -307,7 +295,7 @@ def get_company_info(name, session):
     # program cannot succeed and must exit.
     found_id = re.findall(id_regex, response.text)
     if not found_id:
-        print(PC.warn_box + "Could not find that company name. Please"
+        print("[!] Could not find that company name. Please"
               " double-check LinkedIn and try again.")
         sys.exit()
 
@@ -328,8 +316,8 @@ def get_company_info(name, session):
     print("          Desc:  " + found_desc[0])
     print("          Staff: " + str(found_staff[0]))
     print("          URL:   " + found_website[0])
-    print("\n" + PC.ok_box + "Hopefully that's the right {}! If not, "
-          "double-check LinkedIn and try again.\n".format(name))
+    print(f"\n[*] Hopefully that's the right {name}! If not, "
+          "double-check LinkedIn and try again.\n")
 
     return (found_id[0], int(found_staff[0]))
 
@@ -351,34 +339,33 @@ def set_loops(staff_count, args):
     # loops to the amount of staff / 25 +1 more to catch remainders.
     loops = int((staff_count / 25) + 1)
 
-    print(PC.ok_box + "Company has {} profiles to check. Some may be"
-                      " anonymous.".format(staff_count))
+    print(f"[*] Company has {staff_count} profiles to check. Some may be anonymous.")
 
     # The lines below attempt to detect large result sets and compare that
     # with the command line arguments passed. The goal is to warn when you
     # may not get all the results and to suggest ways to get  more.
     if staff_count > 1000 and not args.geoblast and not args.keywords:
-        print(PC.warn_box + "Note: LinkedIn limits us to a maximum of 1000"
+        print("[!] Note: LinkedIn limits us to a maximum of 1000"
               " results!\n"
               "    Try the --geoblast or --keywords parameter to bypass")
     elif staff_count < 1000 and args.geoblast:
-        print(PC.warn_box + "Geoblast is not necessary, as this company has"
+        print("[!] Geoblast is not necessary, as this company has"
               " less than 1,000 staff. Disabling.")
         args.geoblast = False
     elif staff_count > 1000 and args.geoblast:
-        print(PC.ok_box + "High staff count, geoblast is enabled. Let's rock.")
+        print("[*] High staff count, geoblast is enabled. Let's rock.")
     elif staff_count > 1000 and args.keywords:
-        print(PC.ok_box + "High staff count, using keywords. Hope you picked"
+        print("[*] High staff count, using keywords. Hope you picked"
               " some good ones.")
 
     # If the user purposely restricted the search depth, they probably know
     # what they are doing, but we warn them just in case.
     if args.depth and args.depth < loops:
-        print(PC.warn_box + "You defined a low custom search depth, so we"
+        print("[!] You defined a low custom search depth, so we"
               " might not get them all.")
     else:
-        print(PC.ok_box + "Setting each iteration to a maximum of {} loops of"
-              " 25 results each.".format(loops))
+        print(f"[*] Setting each iteration to a maximum of {loops} loops of"
+              " 25 results each.")
         args.depth = loops
     print("\n\n")
     return args
@@ -402,15 +389,14 @@ def get_results(session, company_id, page, region, keyword):
     # Build the base search URL.
     url = ('https://www.linkedin.com'
            '/voyager/api/search/hits'
-           '?facetCurrentCompany=List({})'
-           '&facetGeoRegion=List({})'
-           '&keywords=List({})'
+           f'?facetCurrentCompany=List({company_id})'
+           f'&facetGeoRegion=List({region})'
+           f'&keywords=List({keyword})'
            '&q=people&maxFacetValues=15'
            '&supportedFacets=List(GEO_REGION,CURRENT_COMPANY)'
            '&count=25'
            '&origin=organization'
-           '&start={}'
-           .format(company_id, region, keyword, page * 25))
+           f'&start={page * 25}')
 
     # Perform the search for this iteration.
     result = session.get(url)
@@ -432,7 +418,7 @@ def scrape_info(session, company_id, staff_count, args):
     This function will stop searching if a loop returns 0 new names.
     """
     full_name_list = []
-    print(PC.ok_box + "Starting search....\n")
+    print("[*] Starting search....\n")
 
     # We pass the full 'args' below as we need to define a few variables from
     # there - the loops as well as potentially disabling features that are
@@ -457,13 +443,11 @@ def scrape_info(session, company_id, staff_count, args):
             region_name = 'r' + str(current_loop)
             current_region = GEO_REGIONS[region_name]
             current_keyword = ''
-            print("\n" + PC.ok_box + "Looping through region {}"
-                  .format(current_region))
+            print(f"\n[*] Looping through region {current_region}")
         elif args.keywords:
             current_keyword = args.keywords[current_loop]
             current_region = ''
-            print("\n" + PC.ok_box + "Looping through keyword {}"
-                  .format(current_keyword))
+            print(f"\n[*] Looping through keyword {current_keyword}")
         else:
             current_region = ''
             current_keyword = ''
@@ -472,8 +456,7 @@ def scrape_info(session, company_id, staff_count, args):
         for page in range(0, args.depth):
             new_names = 0
             sys.stdout.flush()
-            sys.stdout.write(PC.ok_box + "Scraping results on loop "
-                             + str(page+1) + "...    ")
+            sys.stdout.write(f"[*] Scraping results on loop {str(page+1)}...    ")
             result = get_results(session, company_id, page, current_region,
                                  current_keyword)
             first_name = re.findall(r'"firstName":"(.*?)"', result)
@@ -482,7 +465,7 @@ def scrape_info(session, company_id, staff_count, args):
             # Commercial Search Limit might be triggered
             if "UPSELL_LIMIT" in result:
                 sys.stdout.write('\n')
-                print(PC.warn_box + "You've hit the commercial search limit!"
+                print("[!] You've hit the commercial search limit!"
                       " Try again on the 1st of the month. Sorry. :(")
                 break
 
@@ -491,7 +474,7 @@ def scrape_info(session, company_id, staff_count, args):
             # you are not connected enough to get them all.
             if not first_name and not last_name:
                 sys.stdout.write('\n')
-                print(PC.ok_box + "We have hit the end of the road!"
+                print("[*] We have hit the end of the road!"
                       " Moving on...")
                 break
 
@@ -509,9 +492,9 @@ def scrape_info(session, company_id, staff_count, args):
                 if full_name not in full_name_list:
                     full_name_list.append(full_name)
                     new_names += 1
-            sys.stdout.write("    " + PC.ok_box + "Added " + str(new_names) +
-                             " new names. Running total: "
-                             + str(len(full_name_list)) + "              \r")
+            sys.stdout.write(f"    [*] Added {str(new_names)} new names. "
+                             f"Running total: {str(len(full_name_list))}"
+                             "              \r")
 
             # If the user has defined a sleep between loops, we take a little
             # nap here.
@@ -529,14 +512,14 @@ def remove_accents(raw_text):
     function tries to swap those out for standard English alphabet.
     """
 
-    raw_text = re.sub(u"[àáâãäå]", 'a', raw_text)
-    raw_text = re.sub(u"[èéêë]", 'e', raw_text)
-    raw_text = re.sub(u"[ìíîï]", 'i', raw_text)
-    raw_text = re.sub(u"[òóôõö]", 'o', raw_text)
-    raw_text = re.sub(u"[ùúûü]", 'u', raw_text)
-    raw_text = re.sub(u"[ýÿ]", 'y', raw_text)
-    raw_text = re.sub(u"[ß]", 'ss', raw_text)
-    raw_text = re.sub(u"[ñ]", 'n', raw_text)
+    raw_text = re.sub("[àáâãäå]", 'a', raw_text)
+    raw_text = re.sub("[èéêë]", 'e', raw_text)
+    raw_text = re.sub("[ìíîï]", 'i', raw_text)
+    raw_text = re.sub("[òóôõö]", 'o', raw_text)
+    raw_text = re.sub("[ùúûü]", 'u', raw_text)
+    raw_text = re.sub("[ýÿ]", 'y', raw_text)
+    raw_text = re.sub("[ß]", 'ss', raw_text)
+    raw_text = re.sub("[ñ]", 'n', raw_text)
     return raw_text
 
 
@@ -589,13 +572,13 @@ def write_files(company, domain, name_list, out_dir):
 
     # Define all the files names we will be creating.
     files = {}
-    files['rawnames'] = open(out_dir + '/' + company + '-rawnames.txt', 'w')
-    files['f.last'] = open(out_dir + '/' + company + '-f.last.txt', 'w')
-    files['flast'] = open(out_dir + '/' + company + '-flast.txt', 'w')
-    files['firstl'] = open(out_dir + '/' + company + '-firstl.txt', 'w')
-    files['firstlast'] = open(out_dir + '/' + company + '-first.last.txt', 'w')
-    files['fonly'] = open(out_dir + '/' + company + '-first.txt', 'w')
-    files['lastf'] = open(out_dir + '/' + company + '-lastf.txt', 'w')
+    files['rawnames'] = open(f'{out_dir}/{company}-rawnames.txt', 'w')
+    files['f.last'] = open(f'{out_dir}/{company}-f.last.txt', 'w')
+    files['flast'] = open(f'{out_dir}/{company}-flast.txt', 'w')
+    files['firstl'] = open(f'{out_dir}/{company}-firstl.txt', 'w')
+    files['firstlast'] = open(f'{out_dir}/{company}-first.last.txt', 'w')
+    files['fonly'] = open(f'{out_dir}/{company}-first.txt', 'w')
+    files['lastf'] = open(f'{out_dir}/{company}-lastf.txt', 'w')
 
     # First, write all the raw names to a file.
     for name in name_list:
@@ -635,8 +618,7 @@ def write_files(company, domain, name_list, out_dir):
         # The exception below will try to weed out string processing errors
         # I've made in other parts of the program.
         except IndexError:
-            print(PC.warn_box + "Struggled with this tricky name: '{}'."
-                  .format(name))
+            print(f"[!] Struggled with this tricky name: '{name}'.")
 
     # Cleanly close all the files.
     for file_name in files:
@@ -668,8 +650,7 @@ def main():
     write_files(args.company, args.domain, clean_list, args.output)
 
     # Time to get hacking.
-    print("\n\n" + PC.ok_box + "All done! Check out your lovely new files in "
-          + args.output)
+    print(f"\n\n[*] All done! Check out your lovely new files in {args.output}")
 
 
 if __name__ == "__main__":
