@@ -189,6 +189,8 @@ def login(args):
     # Define a successful login by the 302 redirect to the 'feed' page. Try
     # to detect some other common logon failures and alert the user.
     if response.status_code in (302, 303):
+        # Add CSRF token for all additional requests
+        session = set_csrf_token(session)
         redirect = response.headers['Location']
         if 'feed' in redirect:
             print("[*] Successfully logged in.\n")
@@ -243,10 +245,10 @@ def login(args):
     return False
 
 
-def set_search_csrf(session):
+def set_csrf_token(session):
     """Extract the required CSRF token.
 
-    LinkedIn's search function requires a CSRF token equal to the JSESSIONID.
+    Some functions requires a CSRF token equal to the JSESSIONID.
     """
     csrf_token = session.cookies['JSESSIONID'].replace('"', '')
     session.headers.update({'Csrf-Token': csrf_token})
@@ -630,7 +632,6 @@ def main():
         sys.exit()
 
     # Prepare and execute the searches.
-    session = set_search_csrf(session)
     company_id, staff_count = get_company_info(args.company, session)
     found_names = scrape_info(session, company_id, staff_count, args)
 
