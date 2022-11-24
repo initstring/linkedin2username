@@ -52,6 +52,126 @@ GEO_REGIONS = {
             '|pr:0|tt:0|uy:0|ve:0'),
     'r12': 'af:0|bh:0|il:0|jo:0|kw:0|pk:0|qa:0|sa:0|ae:0'}
 
+class NameMutator():
+    """
+    This class handles all name mutations.
+
+    Init with a raw name, and then call the individual functions to return a mutation.
+    """
+    def __init__(self, name):
+        self.name = self.clean_name(name)
+        self.name = self.split_name(self.name)
+
+    @staticmethod
+    def clean_name(name):
+        """
+        Removes common punctuation.
+
+        LinkedIn users tend to add credentials to their names to look special.
+        This function is based on what I have seen in large searches, and attempts
+        to remove them.
+        """
+        # Use case for tool is mostly standard English, try to standardize common non-English
+        # characters.
+        name = re.sub("[àáâãäå]", 'a', name)
+        name = re.sub("[èéêë]", 'e', name)
+        name = re.sub("[ìíîï]", 'i', name)
+        name = re.sub("[òóôõö]", 'o', name)
+        name = re.sub("[ùúûü]", 'u', name)
+        name = re.sub("[ýÿ]", 'y', name)
+        name = re.sub("[ß]", 'ss', name)
+        name = re.sub("[ñ]", 'n', name)
+
+        # Lower-case everything to make it easier to de-duplicate.
+        name = name.lower()
+
+        # The lines below basically trash anything weird left over.
+        # A lot of users have funny things in their names, like () or ''
+        # People like to feel special, I guess.
+        allowed_chars = re.compile('[^a-zA-Z -]')
+        name = allowed_chars.sub('', name)
+
+        # The line below tries to consolidate white space between words
+        # and get rid of leading/trailing spaces.
+        name = re.sub(r'\s+', ' ', name).strip()
+
+        return name
+
+    @staticmethod
+    def split_name(name):
+        """
+        Takes a name (string) and returns a list of individual name-parts (dict).
+
+        Some people have funny names. We assume the most important names are:
+        first name, last name, and the name right before the last name (if they have one)
+        """
+        parsed = re.split(' |-', name)
+
+        if len(parsed) > 2:
+            split_name = {'first': parsed[0], 'second': parsed[-2], 'last': parsed[-1]}
+        else:
+            split_name = {'first': parsed[0], 'last': parsed[-1]}
+
+        return split_name
+
+
+    def f_last(self):
+        """jsmith"""
+        names = set()
+        names.add(self.name['first'][0] + self.name['last'])
+
+        if len(self.name) == 3:
+            names.add(self.name['first'][0] + self.name['second'])
+
+        return names
+
+    def f_dot_last(self):
+        """j.smith"""
+        names = set()
+        names.add(self.name['first'][0] + '.' + self.name['last'])
+
+        if len(self.name) == 3:
+            names.add(self.name['first'][0] + '.' + self.name['second'])
+
+        return names
+
+    def last_f(self):
+        """smithj"""
+        names = set()
+        names.add(self.name['last'] + self.name['first'][0])
+
+        if len(self.name) == 3:
+            names.add(self.name['second'] + self.name['first'][0])
+
+        return names
+
+    def first_dot_last(self):
+        """john.smith"""
+        names = set()
+        names.add(self.name['first'] + '.' + self.name['last'])
+
+        if len(self.name) == 3:
+            names.add(self.name['first'] + '.' + self.name['second'])
+
+        return names
+
+    def first_l(self):
+        """johns"""
+        names = set()
+        names.add(self.name['first'] + self.name['last'][0])
+
+        if len(self.name) == 3:
+            names.add(self.name['first'] + self.name['second'][0])
+
+        return names
+
+    def first(self):
+        """john"""
+        names = set()
+        names.add(self.name['first'])
+
+        return names
+
 
 def parse_arguments():
     """
@@ -495,61 +615,7 @@ def scrape_info(session, company_id, staff_count, args):
 
     return full_name_list
 
-
-def remove_accents(raw_text):
-    """Removes common accent characters.
-
-    Our goal is to brute force login mechanisms, and I work primary with
-    companies deploying English-language systems. From my experience, user
-    accounts tend to be created without special accented characters. This
-    function tries to swap those out for standard English alphabet.
-    """
-
-    raw_text = re.sub("[àáâãäå]", 'a', raw_text)
-    raw_text = re.sub("[èéêë]", 'e', raw_text)
-    raw_text = re.sub("[ìíîï]", 'i', raw_text)
-    raw_text = re.sub("[òóôõö]", 'o', raw_text)
-    raw_text = re.sub("[ùúûü]", 'u', raw_text)
-    raw_text = re.sub("[ýÿ]", 'y', raw_text)
-    raw_text = re.sub("[ß]", 'ss', raw_text)
-    raw_text = re.sub("[ñ]", 'n', raw_text)
-    return raw_text
-
-
-def clean(raw_list):
-    """Removes common punctuation.
-
-    LinkedIn users tend to add credentials to their names to look special.
-    This function is based on what I have seen in large searches, and attempts
-    to remove them.
-    """
-    clean_list = []
-    allowed_chars = re.compile('[^a-zA-Z -]')
-    for name in raw_list:
-
-        # Lower-case everything to make it easier to de-duplicate.
-        name = name.lower()
-
-        # Try to transform non-English characters below.
-        name = remove_accents(name)
-
-        # The line below basically trashes anything weird left over.
-        # A lot of users have funny things in their names, like () or ''
-        # People like to feel special, I guess.
-        name = allowed_chars.sub('', name)
-
-        # The line below tries to consolidate white space between words
-        # and get rid of leading/trailing spaces.
-        name = re.sub(r'\s+', ' ', name).strip()
-
-        # If what is left is non-empty and unique, we add it to the list.
-        if name and name not in clean_list:
-            clean_list.append(name)
-
-    return clean_list
-
-
-def write_files(company, domain, name_list, out_dir):
+def write_files(company, domain, found_names, out_dir):
     """Writes data to various formatted output files.
 
     After scraping and processing is complete, this function formats the raw
@@ -563,59 +629,46 @@ def write_files(company, domain, name_list, out_dir):
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
 
-    # Define all the files names we will be creating.
-    files = {}
-    files['rawnames'] = open(f'{out_dir}/{company}-rawnames.txt', 'w')
-    files['f.last'] = open(f'{out_dir}/{company}-f.last.txt', 'w')
-    files['flast'] = open(f'{out_dir}/{company}-flast.txt', 'w')
-    files['firstl'] = open(f'{out_dir}/{company}-firstl.txt', 'w')
-    files['firstlast'] = open(f'{out_dir}/{company}-first.last.txt', 'w')
-    files['fonly'] = open(f'{out_dir}/{company}-first.txt', 'w')
-    files['lastf'] = open(f'{out_dir}/{company}-lastf.txt', 'w')
+    # Write out all the raw and mutated names to files
+    with open(f'{out_dir}/{company}-rawnames.txt', 'w', encoding='utf-8') as outfile:
+        for name in found_names:
+            outfile.write(name + '\n')
 
-    # First, write all the raw names to a file.
-    for name in name_list:
-        files['rawnames'].write(name + '\n')
+    with open(f'{out_dir}/{company}-flast.txt', 'w', encoding='utf-8') as outfile:
+        for name in found_names:
+            mutator = NameMutator(name)
+            for name in mutator.f_last():
+                outfile.write(name + domain + '\n')
 
-        # Split the name on spaces and hyphens:
-        parse = re.split(' |-', name)
+    with open(f'{out_dir}/{company}-f.last.txt', 'w', encoding='utf-8') as outfile:
+        for name in found_names:
+            mutator = NameMutator(name)
+            for name in mutator.f_dot_last():
+                outfile.write(name + domain + '\n')
 
-        # Users with hyphenated or multiple last names could have several
-        # variations on the username. For a best-effort, we will try using
-        # one or the other, but not both. Users with more than three names
-        # will be truncated down, assuming the second of four is a middle
-        # name.
-        try:
-            if len(parse) > 2:  # for users with more than one last name.
-                first, second, third = parse[0], parse[-2], parse[-1]
-                files['flast'].write(first[0] + second + domain + '\n')
-                files['flast'].write(first[0] + third + domain + '\n')
-                files['f.last'].write(first[0] + '.' + second + domain + '\n')
-                files['f.last'].write(first[0] + '.' + third + domain + '\n')
-                files['lastf'].write(second + first[0] + domain + '\n')
-                files['lastf'].write(third + first[0] + domain + '\n')
-                files['firstlast'].write(first + '.' + second + domain + '\n')
-                files['firstlast'].write(first + '.' + third + domain + '\n')
-                files['firstl'].write(first + second[0] + domain + '\n')
-                files['firstl'].write(first + third[0] + domain + '\n')
-                files['fonly'].write(first + domain + '\n')
-            else:               # for users with only one last name
-                first, last = parse[0], parse[-1]
-                files['flast'].write(first[0] + last + domain + '\n')
-                files['f.last'].write(first[0] + '.' + last + domain + '\n')
-                files['lastf'].write(last + first[0] + domain + '\n')
-                files['firstlast'].write(first + '.' + last + domain + '\n')
-                files['firstl'].write(first + last[0] + domain + '\n')
-                files['fonly'].write(first + domain + '\n')
+    with open(f'{out_dir}/{company}-firstl.txt', 'w', encoding='utf-8') as outfile:
+        for name in found_names:
+            mutator = NameMutator(name)
+            for name in mutator.first_l():
+                outfile.write(name + domain + '\n')
 
-        # The exception below will try to weed out string processing errors
-        # I've made in other parts of the program.
-        except IndexError:
-            print(f"[!] Struggled with this tricky name: '{name}'.")
+    with open(f'{out_dir}/{company}-first.last.txt', 'w', encoding='utf-8') as outfile:
+        for name in found_names:
+            mutator = NameMutator(name)
+            for name in mutator.first_dot_last():
+                outfile.write(name + domain + '\n')
 
-    # Cleanly close all the files.
-    for file_name in files:
-        files[file_name].close()
+    with open(f'{out_dir}/{company}-first.txt', 'w', encoding='utf-8') as outfile:
+        for name in found_names:
+            mutator = NameMutator(name)
+            for name in mutator.first():
+                outfile.write(name + domain + '\n')
+
+    with open(f'{out_dir}/{company}-lastf.txt', 'w', encoding='utf-8') as outfile:
+        for name in found_names:
+            mutator = NameMutator(name)
+            for name in mutator.last_f():
+                outfile.write(name + domain + '\n')
 
 
 def main():
@@ -635,11 +688,8 @@ def main():
     company_id, staff_count = get_company_info(args.company, session)
     found_names = scrape_info(session, company_id, staff_count, args)
 
-    # Clean up all the data.
-    clean_list = clean(found_names)
-
     # Write the data to some files.
-    write_files(args.company, args.domain, clean_list, args.output)
+    write_files(args.company, args.domain, found_names, args.output)
 
     # Time to get hacking.
     print(f"\n\n[*] All done! Check out your lovely new files in {args.output}")
