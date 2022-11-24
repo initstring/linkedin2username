@@ -9,6 +9,7 @@ TEST_NAMES = {
     4: "José Gonzáles"
 }
 
+
 def test_f_last():
     name = TEST_NAMES[1]
     mutator = NameMutator(name)
@@ -25,6 +26,7 @@ def test_f_last():
     name = TEST_NAMES[4]
     mutator = NameMutator(name)
     assert mutator.f_last() == set(["jgonzales",])
+
 
 def test_f_dot_last():
     name = TEST_NAMES[1]
@@ -43,6 +45,7 @@ def test_f_dot_last():
     mutator = NameMutator(name)
     assert mutator.f_dot_last() == set(["j.gonzales",])
 
+
 def test_last_f():
     name = TEST_NAMES[1]
     mutator = NameMutator(name)
@@ -59,6 +62,7 @@ def test_last_f():
     name = TEST_NAMES[4]
     mutator = NameMutator(name)
     assert mutator.last_f() == set(["gonzalesj",])
+
 
 def test_first_dot_last():
     name = TEST_NAMES[1]
@@ -77,6 +81,7 @@ def test_first_dot_last():
     mutator = NameMutator(name)
     assert mutator.first_dot_last() == set(["jose.gonzales",])
 
+
 def test_first_l():
     name = TEST_NAMES[1]
     mutator = NameMutator(name)
@@ -93,6 +98,7 @@ def test_first_l():
     name = TEST_NAMES[4]
     mutator = NameMutator(name)
     assert mutator.first_l() == set(["joseg",])
+
 
 def test_first():
     name = TEST_NAMES[1]

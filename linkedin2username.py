@@ -52,6 +52,7 @@ GEO_REGIONS = {
             '|pr:0|tt:0|uy:0|ve:0'),
     'r12': 'af:0|bh:0|il:0|jo:0|kw:0|pk:0|qa:0|sa:0|ae:0'}
 
+
 class NameMutator():
     """
     This class handles all name mutations.
@@ -113,7 +114,6 @@ class NameMutator():
             split_name = {'first': parsed[0], 'last': parsed[-1]}
 
         return split_name
-
 
     def f_last(self):
         """jsmith"""
@@ -614,6 +614,7 @@ def scrape_info(session, company_id, staff_count, args):
             time.sleep(args.sleep)
 
     return full_name_list
+
 
 def write_files(company, domain, found_names, out_dir):
     """Writes data to various formatted output files.
