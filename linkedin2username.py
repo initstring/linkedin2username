@@ -16,7 +16,7 @@ import argparse
 import getpass
 import urllib.parse
 import requests
-from requests.packages.urllib3.exceptions import InsecureRequestWarning
+import urllib3
 
 BANNER = r"""
 
@@ -270,7 +270,7 @@ def login(args):
     if args.proxy:
         print("[!] Using a proxy, ignoring SSL errors. Don't get pwned.")
         session.verify = False
-        requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
+        urllib3.disable_warnings(category = urllib3.exceptions.InsecureRequestWarning)
         session.proxies.update(args.proxy_dict)
 
     # Our search and regex will work only with a mobile user agent and
@@ -436,7 +436,24 @@ def get_company_info(name, session):
     return (found_id[0], int(found_staff[0]))
 
 
-def set_loops(staff_count, args):
+def set_outer_loops(args):
+    """
+    Sets the number of loops to perform during the scraping sessions
+    """
+    # If we are using geoblast or keywords, we need to define a numer of
+    # "outer_loops". An outer loop will be a normal LinkedIn search, maxing
+    # out at 1000 results.
+    if args.geoblast:
+        outer_loops = range(0, len(GEO_REGIONS))
+    elif args.keywords:
+        outer_loops = range(0, len(args.keywords))
+    else:
+        outer_loops = range(0, 1)
+
+    return outer_loops
+
+
+def set_inner_loops(staff_count, args):
     """Defines total hits to the search API.
 
     Sets a maximum amount of loops based on either the number of staff
@@ -476,13 +493,13 @@ def set_loops(staff_count, args):
     # what they are doing, but we warn them just in case.
     if args.depth and args.depth < loops:
         print("[!] You defined a low custom search depth, so we"
-              " might not get them all.")
+              " might not get them all.\n\n")
     else:
         print(f"[*] Setting each iteration to a maximum of {loops} loops of"
-              " 25 results each.")
+              " 25 results each.\n\n")
         args.depth = loops
-    print("\n\n")
-    return args
+
+    return args.depth, args.geoblast
 
 
 def get_results(session, company_id, page, region, keyword):
@@ -517,8 +534,12 @@ def get_results(session, company_id, page, region, keyword):
     return result.text
 
 
-def scrape_info(session, company_id, staff_count, args):
-    """Uses regexes to extract employee names.
+def do_loops(session, company_id, outer_loops, args):
+    """
+    Performs looping where the actual HTTP requests to scrape names occurs
+
+    This is broken into an individual function both to reduce complexity but also to
+    allow a Ctrl-C to happen and to still write the data we've scraped so far.
 
     The data returned is similar to JSON, but not always formatted properly.
     The regex queries below will build individual lists of first and last
@@ -531,87 +552,76 @@ def scrape_info(session, company_id, staff_count, args):
 
     This function will stop searching if a loop returns 0 new names.
     """
-    full_name_list = []
-    print("[*] Starting search....\n")
-
-    # We pass the full 'args' below as we need to define a few variables from
-    # there - the loops as well as potentially disabling features that are
-    # deemed unnecessary due to small result sets.
-    args = set_loops(staff_count, args)
-
-    # If we are using geoblast or keywords, we need to define a numer of
-    # "outer_loops". An outer loop will be a normal LinkedIn search, maxing
-    # out at 1000 results.
-    if args.geoblast:
-        outer_loops = range(0, len(GEO_REGIONS))
-    elif args.keywords:
-        outer_loops = range(0, len(args.keywords))
-    else:
-        outer_loops = range(0, 1)
-
     # Crafting the right URL is a bit tricky, so currently unnecessary
     # parameters are still being included but set to empty. You will see this
     # below with geoblast and keywords.
-    for current_loop in outer_loops:
-        if args.geoblast:
-            region_name = 'r' + str(current_loop)
-            current_region = GEO_REGIONS[region_name]
-            current_keyword = ''
-            print(f"\n[*] Looping through region {current_region}")
-        elif args.keywords:
-            current_keyword = args.keywords[current_loop]
-            current_region = ''
-            print(f"\n[*] Looping through keyword {current_keyword}")
-        else:
-            current_region = ''
-            current_keyword = ''
+    full_name_list = []
 
-        # This is the inner loop. It will search results 25 at a time.
-        for page in range(0, args.depth):
-            new_names = 0
-            sys.stdout.flush()
-            sys.stdout.write(f"[*] Scraping results on loop {str(page+1)}...    ")
-            result = get_results(session, company_id, page, current_region,
-                                 current_keyword)
-            first_name = re.findall(r'"firstName":"(.*?)"', result)
-            last_name = re.findall(r'"lastName":"(.*?)"', result)
+    # We want to be able to break here with Ctrl-C and still write the names we have
+    try:
+        for current_loop in outer_loops:
+            if args.geoblast:
+                region_name = 'r' + str(current_loop)
+                current_region = GEO_REGIONS[region_name]
+                current_keyword = ''
+                print(f"\n[*] Looping through region {current_region}")
+            elif args.keywords:
+                current_keyword = args.keywords[current_loop]
+                current_region = ''
+                print(f"\n[*] Looping through keyword {current_keyword}")
+            else:
+                current_region = ''
+                current_keyword = ''
 
-            # Commercial Search Limit might be triggered
-            if "UPSELL_LIMIT" in result:
-                sys.stdout.write('\n')
-                print("[!] You've hit the commercial search limit!"
-                      " Try again on the 1st of the month. Sorry. :(")
-                break
+            # This is the inner loop. It will search results 25 at a time.
+            for page in range(0, args.depth):
+                new_names = 0
+                sys.stdout.flush()
+                sys.stdout.write(f"[*] Scraping results on loop {str(page+1)}...    ")
+                result = get_results(session, company_id, page, current_region,
+                                    current_keyword)
+                first_name = re.findall(r'"firstName":"(.*?)"', result)
+                last_name = re.findall(r'"lastName":"(.*?)"', result)
 
-            # If the list of names is empty for a page, we assume that
-            # there are no more search results. Either you got them all or
-            # you are not connected enough to get them all.
-            if not first_name and not last_name:
-                sys.stdout.write('\n')
-                print("[*] We have hit the end of the road! Moving on...")
-                break
+                # Commercial Search Limit might be triggered
+                if "UPSELL_LIMIT" in result:
+                    sys.stdout.write('\n')
+                    print("[!] You've hit the commercial search limit!"
+                        " Try again on the 1st of the month. Sorry. :(")
+                    break
 
-            # re.findall puts all first names and all last names in a list.
-            # They are ordered, so the pairs should correspond with each other.
-            # We parse through them all here, and see which ones are new to us.
-            for first, last in zip(first_name, last_name):
-                full_name = first + ' ' + last
+                # If the list of names is empty for a page, we assume that
+                # there are no more search results. Either you got them all or
+                # you are not connected enough to get them all.
+                if not first_name and not last_name:
+                    sys.stdout.write('\n')
+                    print("[*] We have hit the end of the road! Moving on...")
+                    break
 
-                # Off-By-One Running Total Patch: Ensures that a blank first and
-                # last name are not added to the list of full names.
-                if len(full_name) <= 1:
-                    continue
+                # re.findall puts all first names and all last names in a list.
+                # They are ordered, so the pairs should correspond with each other.
+                # We parse through them all here, and see which ones are new to us.
+                for first, last in zip(first_name, last_name):
+                    full_name = first + ' ' + last
 
-                if full_name not in full_name_list:
-                    full_name_list.append(full_name)
-                    new_names += 1
-            sys.stdout.write(f"    [*] Added {str(new_names)} new names. "
-                             f"Running total: {str(len(full_name_list))}"
-                             "              \r")
+                    # Off-By-One Running Total Patch: Ensures that a blank first and
+                    # last name are not added to the list of full names.
+                    if len(full_name) <= 1:
+                        continue
 
-            # If the user has defined a sleep between loops, we take a little
-            # nap here.
-            time.sleep(args.sleep)
+                    if full_name not in full_name_list:
+                        full_name_list.append(full_name)
+                        new_names += 1
+                sys.stdout.write(f"    [*] Added {str(new_names)} new names. "
+                                f"Running total: {str(len(full_name_list))}"
+                                "              \r")
+
+                # If the user has defined a sleep between loops, we take a little
+                # nap here.
+                time.sleep(args.sleep)
+    except KeyboardInterrupt:
+        print("\n\n[!] Caught Ctrl-C. Breaking loops and writing files")
+        return full_name_list
 
     return full_name_list
 
@@ -680,9 +690,16 @@ def main():
     if not session:
         sys.exit()
 
-    # Prepare and execute the searches.
+    # Get basic company info
     company_id, staff_count = get_company_info(args.company, session)
-    found_names = scrape_info(session, company_id, staff_count, args)
+
+    # Define inner and outer loops
+    args.depth, args.geoblast = set_inner_loops(staff_count, args)
+    outer_loops = set_outer_loops(args)
+
+    # Do the actual searching
+    print("[*] Starting search.... Press Ctrl-C to break and write files early.\n")
+    found_names = do_loops(session, company_id, outer_loops, args)
 
     # Write the data to some files.
     write_files(args.company, args.domain, found_names, args.output)
