@@ -616,6 +616,20 @@ def scrape_info(session, company_id, staff_count, args):
     return full_name_list
 
 
+def write_lines(found_names, name_func, domain, outfile):
+    """
+    Helper function to mutate names and write to an outfile
+
+    Needs to be called with a string variable in name_func that matches the class method
+    name in the NameMutator class.
+    """
+    for name in found_names:
+        mutator = NameMutator(name)
+        for name in getattr(mutator, name_func)():
+            outfile.write(name + domain + '\n')
+
+
+
 def write_files(company, domain, found_names, out_dir):
     """Writes data to various formatted output files.
 
@@ -636,40 +650,22 @@ def write_files(company, domain, found_names, out_dir):
             outfile.write(name + '\n')
 
     with open(f'{out_dir}/{company}-flast.txt', 'w', encoding='utf-8') as outfile:
-        for name in found_names:
-            mutator = NameMutator(name)
-            for name in mutator.f_last():
-                outfile.write(name + domain + '\n')
+        write_lines(found_names, 'f_last', domain, outfile)
 
     with open(f'{out_dir}/{company}-f.last.txt', 'w', encoding='utf-8') as outfile:
-        for name in found_names:
-            mutator = NameMutator(name)
-            for name in mutator.f_dot_last():
-                outfile.write(name + domain + '\n')
+        write_lines(found_names, 'f_dot_last', domain, outfile)
 
     with open(f'{out_dir}/{company}-firstl.txt', 'w', encoding='utf-8') as outfile:
-        for name in found_names:
-            mutator = NameMutator(name)
-            for name in mutator.first_l():
-                outfile.write(name + domain + '\n')
+        write_lines(found_names, 'first_l', domain, outfile)
 
     with open(f'{out_dir}/{company}-first.last.txt', 'w', encoding='utf-8') as outfile:
-        for name in found_names:
-            mutator = NameMutator(name)
-            for name in mutator.first_dot_last():
-                outfile.write(name + domain + '\n')
+        write_lines(found_names, 'first_dot_last', domain, outfile)
 
     with open(f'{out_dir}/{company}-first.txt', 'w', encoding='utf-8') as outfile:
-        for name in found_names:
-            mutator = NameMutator(name)
-            for name in mutator.first():
-                outfile.write(name + domain + '\n')
+        write_lines(found_names, 'first', domain, outfile)
 
     with open(f'{out_dir}/{company}-lastf.txt', 'w', encoding='utf-8') as outfile:
-        for name in found_names:
-            mutator = NameMutator(name)
-            for name in mutator.last_f():
-                outfile.write(name + domain + '\n')
+        write_lines(found_names, 'last_f', domain, outfile)
 
 
 def main():
