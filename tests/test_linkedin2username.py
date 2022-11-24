@@ -13,7 +13,7 @@ TEST_NAMES = {
 def test_f_last():
     name = TEST_NAMES[1]
     mutator = NameMutator(name)
-    assert mutator.f_last() == set(["jsmith",])
+    assert mutator.f_last() == set(["jsmith", ])
 
     name = TEST_NAMES[2]
     mutator = NameMutator(name)
@@ -25,13 +25,13 @@ def test_f_last():
 
     name = TEST_NAMES[4]
     mutator = NameMutator(name)
-    assert mutator.f_last() == set(["jgonzales",])
+    assert mutator.f_last() == set(["jgonzales", ])
 
 
 def test_f_dot_last():
     name = TEST_NAMES[1]
     mutator = NameMutator(name)
-    assert mutator.f_dot_last() == set(["j.smith",])
+    assert mutator.f_dot_last() == set(["j.smith", ])
 
     name = TEST_NAMES[2]
     mutator = NameMutator(name)
@@ -43,13 +43,13 @@ def test_f_dot_last():
 
     name = TEST_NAMES[4]
     mutator = NameMutator(name)
-    assert mutator.f_dot_last() == set(["j.gonzales",])
+    assert mutator.f_dot_last() == set(["j.gonzales", ])
 
 
 def test_last_f():
     name = TEST_NAMES[1]
     mutator = NameMutator(name)
-    assert mutator.last_f() == set(["smithj",])
+    assert mutator.last_f() == set(["smithj", ])
 
     name = TEST_NAMES[2]
     mutator = NameMutator(name)
@@ -61,13 +61,13 @@ def test_last_f():
 
     name = TEST_NAMES[4]
     mutator = NameMutator(name)
-    assert mutator.last_f() == set(["gonzalesj",])
+    assert mutator.last_f() == set(["gonzalesj", ])
 
 
 def test_first_dot_last():
     name = TEST_NAMES[1]
     mutator = NameMutator(name)
-    assert mutator.first_dot_last() == set(["john.smith",])
+    assert mutator.first_dot_last() == set(["john.smith", ])
 
     name = TEST_NAMES[2]
     mutator = NameMutator(name)
@@ -79,13 +79,13 @@ def test_first_dot_last():
 
     name = TEST_NAMES[4]
     mutator = NameMutator(name)
-    assert mutator.first_dot_last() == set(["jose.gonzales",])
+    assert mutator.first_dot_last() == set(["jose.gonzales", ])
 
 
 def test_first_l():
     name = TEST_NAMES[1]
     mutator = NameMutator(name)
-    assert mutator.first_l() == set(["johns",])
+    assert mutator.first_l() == set(["johns", ])
 
     name = TEST_NAMES[2]
     mutator = NameMutator(name)
@@ -97,22 +97,22 @@ def test_first_l():
 
     name = TEST_NAMES[4]
     mutator = NameMutator(name)
-    assert mutator.first_l() == set(["joseg",])
+    assert mutator.first_l() == set(["joseg", ])
 
 
 def test_first():
     name = TEST_NAMES[1]
     mutator = NameMutator(name)
-    assert mutator.first() == set(["john",])
+    assert mutator.first() == set(["john", ])
 
     name = TEST_NAMES[2]
     mutator = NameMutator(name)
-    assert mutator.first() == set(["john",])
+    assert mutator.first() == set(["john", ])
 
     name = TEST_NAMES[3]
     mutator = NameMutator(name)
-    assert mutator.first() == set(["john",])
+    assert mutator.first() == set(["john", ])
 
     name = TEST_NAMES[4]
     mutator = NameMutator(name)
-    assert mutator.first() == set(["jose",])
+    assert mutator.first() == set(["jose", ])

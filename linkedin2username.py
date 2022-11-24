@@ -270,7 +270,7 @@ def login(args):
     if args.proxy:
         print("[!] Using a proxy, ignoring SSL errors. Don't get pwned.")
         session.verify = False
-        urllib3.disable_warnings(category = urllib3.exceptions.InsecureRequestWarning)
+        urllib3.disable_warnings(category=urllib3.exceptions.InsecureRequestWarning)
         session.proxies.update(args.proxy_dict)
 
     # Our search and regex will work only with a mobile user agent and
@@ -578,16 +578,15 @@ def do_loops(session, company_id, outer_loops, args):
                 new_names = 0
                 sys.stdout.flush()
                 sys.stdout.write(f"[*] Scraping results on loop {str(page+1)}...    ")
-                result = get_results(session, company_id, page, current_region,
-                                    current_keyword)
+                result = get_results(session, company_id, page, current_region, current_keyword)
                 first_name = re.findall(r'"firstName":"(.*?)"', result)
                 last_name = re.findall(r'"lastName":"(.*?)"', result)
 
                 # Commercial Search Limit might be triggered
                 if "UPSELL_LIMIT" in result:
                     sys.stdout.write('\n')
-                    print("[!] You've hit the commercial search limit!"
-                        " Try again on the 1st of the month. Sorry. :(")
+                    print("[!] You've hit the commercial search limit! "
+                          "Try again on the 1st of the month. Sorry. :(")
                     break
 
                 # If the list of names is empty for a page, we assume that
@@ -613,8 +612,8 @@ def do_loops(session, company_id, outer_loops, args):
                         full_name_list.append(full_name)
                         new_names += 1
                 sys.stdout.write(f"    [*] Added {str(new_names)} new names. "
-                                f"Running total: {str(len(full_name_list))}"
-                                "              \r")
+                                 f"Running total: {str(len(full_name_list))}"
+                                 "              \r")
 
                 # If the user has defined a sleep between loops, we take a little
                 # nap here.
