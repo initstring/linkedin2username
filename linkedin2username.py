@@ -629,7 +629,6 @@ def write_lines(found_names, name_func, domain, outfile):
             outfile.write(name + domain + '\n')
 
 
-
 def write_files(company, domain, found_names, out_dir):
     """Writes data to various formatted output files.
 
