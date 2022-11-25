@@ -72,6 +72,9 @@ class NameMutator():
         This function is based on what I have seen in large searches, and attempts
         to remove them.
         """
+        # Lower-case everything to make it easier to de-duplicate.
+        name = name.lower()
+
         # Use case for tool is mostly standard English, try to standardize common non-English
         # characters.
         name = re.sub("[àáâãäå]", 'a', name)
@@ -82,9 +85,6 @@ class NameMutator():
         name = re.sub("[ýÿ]", 'y', name)
         name = re.sub("[ß]", 'ss', name)
         name = re.sub("[ñ]", 'n', name)
-
-        # Lower-case everything to make it easier to de-duplicate.
-        name = name.lower()
 
         # The lines below basically trash anything weird left over.
         # A lot of users have funny things in their names, like () or ''

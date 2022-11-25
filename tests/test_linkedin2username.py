@@ -116,3 +116,21 @@ def test_first():
     name = TEST_NAMES[4]
     mutator = NameMutator(name)
     assert mutator.first() == set(["jose", ])
+
+
+def test_clean_name():
+    mutator = NameMutator("xxx")
+    assert mutator.clean_name("  🙂Ànèôõö    ßï🙂  ") == "aneooo ssi"
+
+
+def test_split_name():
+    mutator = NameMutator("xxx")
+
+    name = "madonna wayne gacey"
+    assert mutator.split_name(name) == {"first": "madonna", "second": "wayne", "last": "gacey"}
+
+    name = "twiggy ramirez"
+    assert mutator.split_name(name) == {"first": "twiggy", "last": "ramirez"}
+
+    name = "brian warner is marilyn manson"
+    assert mutator.split_name(name) == {"first": "brian", "second": "marilyn", "last": "manson"}
