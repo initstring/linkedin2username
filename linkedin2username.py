@@ -16,7 +16,7 @@ import argparse
 import getpass
 import urllib.parse
 import requests
-from requests.packages.urllib3.exceptions import InsecureRequestWarning
+import urllib3
 
 BANNER = r"""
 
@@ -51,6 +51,126 @@ GEO_REGIONS = {
     'r11': ('ar:0|bo:0|br:0|cl:0|co:0|cr:0|do:0|ec:0|gt:0|mx:0|pa:0|pe:0'
             '|pr:0|tt:0|uy:0|ve:0'),
     'r12': 'af:0|bh:0|il:0|jo:0|kw:0|pk:0|qa:0|sa:0|ae:0'}
+
+
+class NameMutator():
+    """
+    This class handles all name mutations.
+
+    Init with a raw name, and then call the individual functions to return a mutation.
+    """
+    def __init__(self, name):
+        self.name = self.clean_name(name)
+        self.name = self.split_name(self.name)
+
+    @staticmethod
+    def clean_name(name):
+        """
+        Removes common punctuation.
+
+        LinkedIn users tend to add credentials to their names to look special.
+        This function is based on what I have seen in large searches, and attempts
+        to remove them.
+        """
+        # Lower-case everything to make it easier to de-duplicate.
+        name = name.lower()
+
+        # Use case for tool is mostly standard English, try to standardize common non-English
+        # characters.
+        name = re.sub("[àáâãäå]", 'a', name)
+        name = re.sub("[èéêë]", 'e', name)
+        name = re.sub("[ìíîï]", 'i', name)
+        name = re.sub("[òóôõö]", 'o', name)
+        name = re.sub("[ùúûü]", 'u', name)
+        name = re.sub("[ýÿ]", 'y', name)
+        name = re.sub("[ß]", 'ss', name)
+        name = re.sub("[ñ]", 'n', name)
+
+        # The lines below basically trash anything weird left over.
+        # A lot of users have funny things in their names, like () or ''
+        # People like to feel special, I guess.
+        allowed_chars = re.compile('[^a-zA-Z -]')
+        name = allowed_chars.sub('', name)
+
+        # The line below tries to consolidate white space between words
+        # and get rid of leading/trailing spaces.
+        name = re.sub(r'\s+', ' ', name).strip()
+
+        return name
+
+    @staticmethod
+    def split_name(name):
+        """
+        Takes a name (string) and returns a list of individual name-parts (dict).
+
+        Some people have funny names. We assume the most important names are:
+        first name, last name, and the name right before the last name (if they have one)
+        """
+        parsed = re.split(' |-', name)
+
+        if len(parsed) > 2:
+            split_name = {'first': parsed[0], 'second': parsed[-2], 'last': parsed[-1]}
+        else:
+            split_name = {'first': parsed[0], 'last': parsed[-1]}
+
+        return split_name
+
+    def f_last(self):
+        """jsmith"""
+        names = set()
+        names.add(self.name['first'][0] + self.name['last'])
+
+        if len(self.name) == 3:
+            names.add(self.name['first'][0] + self.name['second'])
+
+        return names
+
+    def f_dot_last(self):
+        """j.smith"""
+        names = set()
+        names.add(self.name['first'][0] + '.' + self.name['last'])
+
+        if len(self.name) == 3:
+            names.add(self.name['first'][0] + '.' + self.name['second'])
+
+        return names
+
+    def last_f(self):
+        """smithj"""
+        names = set()
+        names.add(self.name['last'] + self.name['first'][0])
+
+        if len(self.name) == 3:
+            names.add(self.name['second'] + self.name['first'][0])
+
+        return names
+
+    def first_dot_last(self):
+        """john.smith"""
+        names = set()
+        names.add(self.name['first'] + '.' + self.name['last'])
+
+        if len(self.name) == 3:
+            names.add(self.name['first'] + '.' + self.name['second'])
+
+        return names
+
+    def first_l(self):
+        """johns"""
+        names = set()
+        names.add(self.name['first'] + self.name['last'][0])
+
+        if len(self.name) == 3:
+            names.add(self.name['first'] + self.name['second'][0])
+
+        return names
+
+    def first(self):
+        """john"""
+        names = set()
+        names.add(self.name['first'])
+
+        return names
 
 
 def parse_arguments():
@@ -145,12 +265,15 @@ def login(args):
     """
     session = requests.session()
 
+    # The following are known errors that require the user to log in via the web
+    login_problems = ['challenge', 'captcha', 'manage-account', 'add-email']
+
     # Special options below when using a proxy server. Helpful for debugging
     # the application in Burp Suite.
     if args.proxy:
         print("[!] Using a proxy, ignoring SSL errors. Don't get pwned.")
         session.verify = False
-        requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
+        urllib3.disable_warnings(category=urllib3.exceptions.InsecureRequestWarning)
         session.proxies.update(args.proxy_dict)
 
     # Our search and regex will work only with a mobile user agent and
@@ -193,41 +316,26 @@ def login(args):
         session = set_csrf_token(session)
         redirect = response.headers['Location']
         if 'feed' in redirect:
-            print("[*] Successfully logged in.\n")
             return session
-        if 'challenge' in redirect:
-            print("[!] LinkedIn doesn't like something about this"
-                  " login. Maybe you're being sneaky on a VPN or something."
-                  " You may get an email with a verification token. You can"
-                  " ignore the email. Log in from a web browser and try"
-                  " again.\n")
-            return False
-        if 'captcha' in redirect:
-            print("[!] You've triggered a CAPTCHA. Oops. Try logging"
-                  " in with your web browser first and come back later.")
-            return False
         if 'add-phone' in redirect:
             # Skip the prompt to add a phone number
             url = 'https://www.linkedin.com/checkpoint/post-login/security/dismiss-phone-event'
             response = session.post(url)
-            if response.status_code != 200:
-                print("[!] Could not skip phone prompt. Log in via the web and then try again.\n")
-                return False
-            return True
-        if 'manage-account' in redirect:
-            print("[!] LinkedIn has some account notification. Log in via the web and clear that.")
-            return False
-        if 'add-email' in redirect:
-            print("[!] LinkedIn wants you to add an email address to your account. "
-                  "Log in via the web first and do that.")
-            return False
+            if response.status_code == 200:
+                return session
+            print("[!] Could not skip phone prompt. Log in via the web and then try again.\n")
 
-        # The below will detect some 302 that I don't yet know about.
-        print("[!] Some unknown redirection occurred. If this persists, please open an issue "
-              "and include the info below:")
-        print("DEBUG INFO:")
-        print(f"LOCATION: {redirect}")
-        print(f"RESPONSE TEXT:\n{response.text}")
+        elif any(x in redirect for x in login_problems):
+            print("[!] LinkedIn has a message for you that you need to address. "
+                  "Please log in using a web browser first, and then come back and try again.")
+        else:
+            # The below will detect some 302 that I don't yet know about.
+            print("[!] Some unknown redirection occurred. If this persists, please open an issue "
+                  "and include the info below:")
+            print("DEBUG INFO:")
+            print(f"LOCATION: {redirect}")
+            print(f"RESPONSE TEXT:\n{response.text}")
+
         return False
 
     # A failed logon doesn't generate a 302 at all, but simply responds with
@@ -265,10 +373,10 @@ def get_company_info(name, session):
     # The following regexes may be moving targets, I will try to keep them up
     # to date. If you have issues with these, please open a ticket on GitHub.
     # Thanks!
-    website_regex = r'companyPageUrl":"(http.*?)"'
-    staff_regex = r'staffCount":([0-9]+),'
-    id_regex = r'"objectUrn":"urn:li:company:([0-9]+)"'
-    desc_regex = r'tagline":"(.*?)"'
+    regexes = {'website': r'companyPageUrl":"(http.*?)"',
+               'staff': r'staffCount":([0-9]+),',
+               'id': r'"objectUrn":"urn:li:company:([0-9]+)"',
+               'desc': r'tagline":"(.*?)"'}
     escaped_name = urllib.parse.quote_plus(name)
 
     response = session.get(('https://www.linkedin.com'
@@ -289,20 +397,20 @@ def get_company_info(name, session):
 
     # Will search for the company ID in the response. If not found, the
     # program cannot succeed and must exit.
-    found_id = re.findall(id_regex, response.text)
+    found_id = re.findall(regexes['id'], response.text)
     if not found_id:
         print("[!] Could not find that company name. Please double-check LinkedIn and try again.")
         sys.exit()
 
     # Below we will try to scrape metadata on the company. If not found, will
     # set generic strings as warnings.
-    found_desc = re.findall(desc_regex, response.text)
+    found_desc = re.findall(regexes['desc'], response.text)
     if not found_desc:
         found_desc = ["NOT FOUND"]
-    found_staff = re.findall(staff_regex, response.text)
+    found_staff = re.findall(regexes['staff'], response.text)
     if not found_staff:
         found_staff = ["RegEx issues, please open a ticket on GitHub!"]
-    found_website = re.findall(website_regex, response.text)
+    found_website = re.findall(regexes['website'], response.text)
     if not found_website:
         found_website = ["RegEx issues, please open a ticket on GitHub!"]
 
@@ -316,7 +424,24 @@ def get_company_info(name, session):
     return (found_id[0], int(found_staff[0]))
 
 
-def set_loops(staff_count, args):
+def set_outer_loops(args):
+    """
+    Sets the number of loops to perform during the scraping sessions
+    """
+    # If we are using geoblast or keywords, we need to define a numer of
+    # "outer_loops". An outer loop will be a normal LinkedIn search, maxing
+    # out at 1000 results.
+    if args.geoblast:
+        outer_loops = range(0, len(GEO_REGIONS))
+    elif args.keywords:
+        outer_loops = range(0, len(args.keywords))
+    else:
+        outer_loops = range(0, 1)
+
+    return outer_loops
+
+
+def set_inner_loops(staff_count, args):
     """Defines total hits to the search API.
 
     Sets a maximum amount of loops based on either the number of staff
@@ -356,13 +481,13 @@ def set_loops(staff_count, args):
     # what they are doing, but we warn them just in case.
     if args.depth and args.depth < loops:
         print("[!] You defined a low custom search depth, so we"
-              " might not get them all.")
+              " might not get them all.\n\n")
     else:
         print(f"[*] Setting each iteration to a maximum of {loops} loops of"
-              " 25 results each.")
+              " 25 results each.\n\n")
         args.depth = loops
-    print("\n\n")
-    return args
+
+    return args.depth, args.geoblast
 
 
 def get_results(session, company_id, page, region, keyword):
@@ -397,8 +522,12 @@ def get_results(session, company_id, page, region, keyword):
     return result.text
 
 
-def scrape_info(session, company_id, staff_count, args):
-    """Uses regexes to extract employee names.
+def do_loops(session, company_id, outer_loops, args):
+    """
+    Performs looping where the actual HTTP requests to scrape names occurs
+
+    This is broken into an individual function both to reduce complexity but also to
+    allow a Ctrl-C to happen and to still write the data we've scraped so far.
 
     The data returned is similar to JSON, but not always formatted properly.
     The regex queries below will build individual lists of first and last
@@ -411,145 +540,92 @@ def scrape_info(session, company_id, staff_count, args):
 
     This function will stop searching if a loop returns 0 new names.
     """
-    full_name_list = []
-    print("[*] Starting search....\n")
-
-    # We pass the full 'args' below as we need to define a few variables from
-    # there - the loops as well as potentially disabling features that are
-    # deemed unnecessary due to small result sets.
-    args = set_loops(staff_count, args)
-
-    # If we are using geoblast or keywords, we need to define a numer of
-    # "outer_loops". An outer loop will be a normal LinkedIn search, maxing
-    # out at 1000 results.
-    if args.geoblast:
-        outer_loops = range(0, len(GEO_REGIONS))
-    elif args.keywords:
-        outer_loops = range(0, len(args.keywords))
-    else:
-        outer_loops = range(0, 1)
-
     # Crafting the right URL is a bit tricky, so currently unnecessary
     # parameters are still being included but set to empty. You will see this
     # below with geoblast and keywords.
-    for current_loop in outer_loops:
-        if args.geoblast:
-            region_name = 'r' + str(current_loop)
-            current_region = GEO_REGIONS[region_name]
-            current_keyword = ''
-            print(f"\n[*] Looping through region {current_region}")
-        elif args.keywords:
-            current_keyword = args.keywords[current_loop]
-            current_region = ''
-            print(f"\n[*] Looping through keyword {current_keyword}")
-        else:
-            current_region = ''
-            current_keyword = ''
+    full_name_list = []
 
-        # This is the inner loop. It will search results 25 at a time.
-        for page in range(0, args.depth):
-            new_names = 0
-            sys.stdout.flush()
-            sys.stdout.write(f"[*] Scraping results on loop {str(page+1)}...    ")
-            result = get_results(session, company_id, page, current_region,
-                                 current_keyword)
-            first_name = re.findall(r'"firstName":"(.*?)"', result)
-            last_name = re.findall(r'"lastName":"(.*?)"', result)
+    # We want to be able to break here with Ctrl-C and still write the names we have
+    try:
+        for current_loop in outer_loops:
+            if args.geoblast:
+                region_name = 'r' + str(current_loop)
+                current_region = GEO_REGIONS[region_name]
+                current_keyword = ''
+                print(f"\n[*] Looping through region {current_region}")
+            elif args.keywords:
+                current_keyword = args.keywords[current_loop]
+                current_region = ''
+                print(f"\n[*] Looping through keyword {current_keyword}")
+            else:
+                current_region = ''
+                current_keyword = ''
 
-            # Commercial Search Limit might be triggered
-            if "UPSELL_LIMIT" in result:
-                sys.stdout.write('\n')
-                print("[!] You've hit the commercial search limit!"
-                      " Try again on the 1st of the month. Sorry. :(")
-                break
+            # This is the inner loop. It will search results 25 at a time.
+            for page in range(0, args.depth):
+                new_names = 0
+                sys.stdout.flush()
+                sys.stdout.write(f"[*] Scraping results on loop {str(page+1)}...    ")
+                result = get_results(session, company_id, page, current_region, current_keyword)
+                first_name = re.findall(r'"firstName":"(.*?)"', result)
+                last_name = re.findall(r'"lastName":"(.*?)"', result)
 
-            # If the list of names is empty for a page, we assume that
-            # there are no more search results. Either you got them all or
-            # you are not connected enough to get them all.
-            if not first_name and not last_name:
-                sys.stdout.write('\n')
-                print("[*] We have hit the end of the road! Moving on...")
-                break
+                # Commercial Search Limit might be triggered
+                if "UPSELL_LIMIT" in result:
+                    sys.stdout.write('\n')
+                    print("[!] You've hit the commercial search limit! "
+                          "Try again on the 1st of the month. Sorry. :(")
+                    break
 
-            # re.findall puts all first names and all last names in a list.
-            # They are ordered, so the pairs should correspond with each other.
-            # We parse through them all here, and see which ones are new to us.
-            for first, last in zip(first_name, last_name):
-                full_name = first + ' ' + last
+                # If the list of names is empty for a page, we assume that
+                # there are no more search results. Either you got them all or
+                # you are not connected enough to get them all.
+                if not first_name and not last_name:
+                    sys.stdout.write('\n')
+                    print("[*] We have hit the end of the road! Moving on...")
+                    break
 
-                # Off-By-One Running Total Patch: Ensures that a blank first and
-                # last name are not added to the list of full names.
-                if len(full_name) <= 1:
-                    continue
+                # re.findall puts all first names and all last names in a list.
+                # They are ordered, so the pairs should correspond with each other.
+                # We parse through them all here, and see which ones are new to us.
+                for first, last in zip(first_name, last_name):
+                    full_name = first + ' ' + last
 
-                if full_name not in full_name_list:
-                    full_name_list.append(full_name)
-                    new_names += 1
-            sys.stdout.write(f"    [*] Added {str(new_names)} new names. "
-                             f"Running total: {str(len(full_name_list))}"
-                             "              \r")
+                    # Off-By-One Running Total Patch: Ensures that a blank first and
+                    # last name are not added to the list of full names.
+                    if len(full_name) <= 1:
+                        continue
 
-            # If the user has defined a sleep between loops, we take a little
-            # nap here.
-            time.sleep(args.sleep)
+                    if full_name not in full_name_list:
+                        full_name_list.append(full_name)
+                        new_names += 1
+                sys.stdout.write(f"    [*] Added {str(new_names)} new names. "
+                                 f"Running total: {str(len(full_name_list))}"
+                                 "              \r")
+
+                # If the user has defined a sleep between loops, we take a little
+                # nap here.
+                time.sleep(args.sleep)
+    except KeyboardInterrupt:
+        print("\n\n[!] Caught Ctrl-C. Breaking loops and writing files")
 
     return full_name_list
 
 
-def remove_accents(raw_text):
-    """Removes common accent characters.
-
-    Our goal is to brute force login mechanisms, and I work primary with
-    companies deploying English-language systems. From my experience, user
-    accounts tend to be created without special accented characters. This
-    function tries to swap those out for standard English alphabet.
+def write_lines(found_names, name_func, domain, outfile):
     """
+    Helper function to mutate names and write to an outfile
 
-    raw_text = re.sub("[àáâãäå]", 'a', raw_text)
-    raw_text = re.sub("[èéêë]", 'e', raw_text)
-    raw_text = re.sub("[ìíîï]", 'i', raw_text)
-    raw_text = re.sub("[òóôõö]", 'o', raw_text)
-    raw_text = re.sub("[ùúûü]", 'u', raw_text)
-    raw_text = re.sub("[ýÿ]", 'y', raw_text)
-    raw_text = re.sub("[ß]", 'ss', raw_text)
-    raw_text = re.sub("[ñ]", 'n', raw_text)
-    return raw_text
-
-
-def clean(raw_list):
-    """Removes common punctuation.
-
-    LinkedIn users tend to add credentials to their names to look special.
-    This function is based on what I have seen in large searches, and attempts
-    to remove them.
+    Needs to be called with a string variable in name_func that matches the class method
+    name in the NameMutator class.
     """
-    clean_list = []
-    allowed_chars = re.compile('[^a-zA-Z -]')
-    for name in raw_list:
-
-        # Lower-case everything to make it easier to de-duplicate.
-        name = name.lower()
-
-        # Try to transform non-English characters below.
-        name = remove_accents(name)
-
-        # The line below basically trashes anything weird left over.
-        # A lot of users have funny things in their names, like () or ''
-        # People like to feel special, I guess.
-        name = allowed_chars.sub('', name)
-
-        # The line below tries to consolidate white space between words
-        # and get rid of leading/trailing spaces.
-        name = re.sub(r'\s+', ' ', name).strip()
-
-        # If what is left is non-empty and unique, we add it to the list.
-        if name and name not in clean_list:
-            clean_list.append(name)
-
-    return clean_list
+    for name in found_names:
+        mutator = NameMutator(name)
+        for name in getattr(mutator, name_func)():
+            outfile.write(name + domain + '\n')
 
 
-def write_files(company, domain, name_list, out_dir):
+def write_files(company, domain, found_names, out_dir):
     """Writes data to various formatted output files.
 
     After scraping and processing is complete, this function formats the raw
@@ -563,59 +639,28 @@ def write_files(company, domain, name_list, out_dir):
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
 
-    # Define all the files names we will be creating.
-    files = {}
-    files['rawnames'] = open(f'{out_dir}/{company}-rawnames.txt', 'w')
-    files['f.last'] = open(f'{out_dir}/{company}-f.last.txt', 'w')
-    files['flast'] = open(f'{out_dir}/{company}-flast.txt', 'w')
-    files['firstl'] = open(f'{out_dir}/{company}-firstl.txt', 'w')
-    files['firstlast'] = open(f'{out_dir}/{company}-first.last.txt', 'w')
-    files['fonly'] = open(f'{out_dir}/{company}-first.txt', 'w')
-    files['lastf'] = open(f'{out_dir}/{company}-lastf.txt', 'w')
+    # Write out all the raw and mutated names to files
+    with open(f'{out_dir}/{company}-rawnames.txt', 'w', encoding='utf-8') as outfile:
+        for name in found_names:
+            outfile.write(name + '\n')
 
-    # First, write all the raw names to a file.
-    for name in name_list:
-        files['rawnames'].write(name + '\n')
+    with open(f'{out_dir}/{company}-flast.txt', 'w', encoding='utf-8') as outfile:
+        write_lines(found_names, 'f_last', domain, outfile)
 
-        # Split the name on spaces and hyphens:
-        parse = re.split(' |-', name)
+    with open(f'{out_dir}/{company}-f.last.txt', 'w', encoding='utf-8') as outfile:
+        write_lines(found_names, 'f_dot_last', domain, outfile)
 
-        # Users with hyphenated or multiple last names could have several
-        # variations on the username. For a best-effort, we will try using
-        # one or the other, but not both. Users with more than three names
-        # will be truncated down, assuming the second of four is a middle
-        # name.
-        try:
-            if len(parse) > 2:  # for users with more than one last name.
-                first, second, third = parse[0], parse[-2], parse[-1]
-                files['flast'].write(first[0] + second + domain + '\n')
-                files['flast'].write(first[0] + third + domain + '\n')
-                files['f.last'].write(first[0] + '.' + second + domain + '\n')
-                files['f.last'].write(first[0] + '.' + third + domain + '\n')
-                files['lastf'].write(second + first[0] + domain + '\n')
-                files['lastf'].write(third + first[0] + domain + '\n')
-                files['firstlast'].write(first + '.' + second + domain + '\n')
-                files['firstlast'].write(first + '.' + third + domain + '\n')
-                files['firstl'].write(first + second[0] + domain + '\n')
-                files['firstl'].write(first + third[0] + domain + '\n')
-                files['fonly'].write(first + domain + '\n')
-            else:               # for users with only one last name
-                first, last = parse[0], parse[-1]
-                files['flast'].write(first[0] + last + domain + '\n')
-                files['f.last'].write(first[0] + '.' + last + domain + '\n')
-                files['lastf'].write(last + first[0] + domain + '\n')
-                files['firstlast'].write(first + '.' + last + domain + '\n')
-                files['firstl'].write(first + last[0] + domain + '\n')
-                files['fonly'].write(first + domain + '\n')
+    with open(f'{out_dir}/{company}-firstl.txt', 'w', encoding='utf-8') as outfile:
+        write_lines(found_names, 'first_l', domain, outfile)
 
-        # The exception below will try to weed out string processing errors
-        # I've made in other parts of the program.
-        except IndexError:
-            print(f"[!] Struggled with this tricky name: '{name}'.")
+    with open(f'{out_dir}/{company}-first.last.txt', 'w', encoding='utf-8') as outfile:
+        write_lines(found_names, 'first_dot_last', domain, outfile)
 
-    # Cleanly close all the files.
-    for file_name in files:
-        files[file_name].close()
+    with open(f'{out_dir}/{company}-first.txt', 'w', encoding='utf-8') as outfile:
+        write_lines(found_names, 'first', domain, outfile)
+
+    with open(f'{out_dir}/{company}-lastf.txt', 'w', encoding='utf-8') as outfile:
+        write_lines(found_names, 'last_f', domain, outfile)
 
 
 def main():
@@ -631,15 +676,23 @@ def main():
     if not session:
         sys.exit()
 
-    # Prepare and execute the searches.
-    company_id, staff_count = get_company_info(args.company, session)
-    found_names = scrape_info(session, company_id, staff_count, args)
+    print("[*] Successfully logged in.")
 
-    # Clean up all the data.
-    clean_list = clean(found_names)
+    # Get basic company info
+    print("[*] Trying to get company info...")
+    company_id, staff_count = get_company_info(args.company, session)
+
+    # Define inner and outer loops
+    print("[*] Calculating inner and outer loops...")
+    args.depth, args.geoblast = set_inner_loops(staff_count, args)
+    outer_loops = set_outer_loops(args)
+
+    # Do the actual searching
+    print("[*] Starting search.... Press Ctrl-C to break and write files early.\n")
+    found_names = do_loops(session, company_id, outer_loops, args)
 
     # Write the data to some files.
-    write_files(args.company, args.domain, clean_list, args.output)
+    write_files(args.company, args.domain, found_names, args.output)
 
     # Time to get hacking.
     print(f"\n\n[*] All done! Check out your lovely new files in {args.output}")
