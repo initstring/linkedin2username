@@ -265,6 +265,9 @@ def login(args):
     """
     session = requests.session()
 
+    # The following are known errors that require the user to log in via the web
+    login_problems = ['challenge', 'captcha', 'manage-account', 'add-email']
+
     # Special options below when using a proxy server. Helpful for debugging
     # the application in Burp Suite.
     if args.proxy:
@@ -313,41 +316,26 @@ def login(args):
         session = set_csrf_token(session)
         redirect = response.headers['Location']
         if 'feed' in redirect:
-            print("[*] Successfully logged in.\n")
             return session
-        if 'challenge' in redirect:
-            print("[!] LinkedIn doesn't like something about this"
-                  " login. Maybe you're being sneaky on a VPN or something."
-                  " You may get an email with a verification token. You can"
-                  " ignore the email. Log in from a web browser and try"
-                  " again.\n")
-            return False
-        if 'captcha' in redirect:
-            print("[!] You've triggered a CAPTCHA. Oops. Try logging"
-                  " in with your web browser first and come back later.")
-            return False
         if 'add-phone' in redirect:
             # Skip the prompt to add a phone number
             url = 'https://www.linkedin.com/checkpoint/post-login/security/dismiss-phone-event'
             response = session.post(url)
-            if response.status_code != 200:
-                print("[!] Could not skip phone prompt. Log in via the web and then try again.\n")
-                return False
-            return True
-        if 'manage-account' in redirect:
-            print("[!] LinkedIn has some account notification. Log in via the web and clear that.")
-            return False
-        if 'add-email' in redirect:
-            print("[!] LinkedIn wants you to add an email address to your account. "
-                  "Log in via the web first and do that.")
-            return False
+            if response.status_code == 200:
+                return session
+            print("[!] Could not skip phone prompt. Log in via the web and then try again.\n")
 
-        # The below will detect some 302 that I don't yet know about.
-        print("[!] Some unknown redirection occurred. If this persists, please open an issue "
-              "and include the info below:")
-        print("DEBUG INFO:")
-        print(f"LOCATION: {redirect}")
-        print(f"RESPONSE TEXT:\n{response.text}")
+        elif any(x in redirect for x in login_problems):
+            print("[!] LinkedIn has a message for you that you need to address. "
+                  "Please log in using a web browser first, and then come back and try again.")
+        else:
+            # The below will detect some 302 that I don't yet know about.
+            print("[!] Some unknown redirection occurred. If this persists, please open an issue "
+                  "and include the info below:")
+            print("DEBUG INFO:")
+            print(f"LOCATION: {redirect}")
+            print(f"RESPONSE TEXT:\n{response.text}")
+
         return False
 
     # A failed logon doesn't generate a 302 at all, but simply responds with
@@ -385,10 +373,10 @@ def get_company_info(name, session):
     # The following regexes may be moving targets, I will try to keep them up
     # to date. If you have issues with these, please open a ticket on GitHub.
     # Thanks!
-    website_regex = r'companyPageUrl":"(http.*?)"'
-    staff_regex = r'staffCount":([0-9]+),'
-    id_regex = r'"objectUrn":"urn:li:company:([0-9]+)"'
-    desc_regex = r'tagline":"(.*?)"'
+    regexes = {'website': r'companyPageUrl":"(http.*?)"',
+               'staff': r'staffCount":([0-9]+),',
+               'id': r'"objectUrn":"urn:li:company:([0-9]+)"',
+               'desc': r'tagline":"(.*?)"'}
     escaped_name = urllib.parse.quote_plus(name)
 
     response = session.get(('https://www.linkedin.com'
@@ -409,20 +397,20 @@ def get_company_info(name, session):
 
     # Will search for the company ID in the response. If not found, the
     # program cannot succeed and must exit.
-    found_id = re.findall(id_regex, response.text)
+    found_id = re.findall(regexes['id'], response.text)
     if not found_id:
         print("[!] Could not find that company name. Please double-check LinkedIn and try again.")
         sys.exit()
 
     # Below we will try to scrape metadata on the company. If not found, will
     # set generic strings as warnings.
-    found_desc = re.findall(desc_regex, response.text)
+    found_desc = re.findall(regexes['desc'], response.text)
     if not found_desc:
         found_desc = ["NOT FOUND"]
-    found_staff = re.findall(staff_regex, response.text)
+    found_staff = re.findall(regexes['staff'], response.text)
     if not found_staff:
         found_staff = ["RegEx issues, please open a ticket on GitHub!"]
-    found_website = re.findall(website_regex, response.text)
+    found_website = re.findall(regexes['website'], response.text)
     if not found_website:
         found_website = ["RegEx issues, please open a ticket on GitHub!"]
 
@@ -620,7 +608,6 @@ def do_loops(session, company_id, outer_loops, args):
                 time.sleep(args.sleep)
     except KeyboardInterrupt:
         print("\n\n[!] Caught Ctrl-C. Breaking loops and writing files")
-        return full_name_list
 
     return full_name_list
 
@@ -689,10 +676,14 @@ def main():
     if not session:
         sys.exit()
 
+    print("[*] Successfully logged in.")
+
     # Get basic company info
+    print("[*] Trying to get company info...")
     company_id, staff_count = get_company_info(args.company, session)
 
     # Define inner and outer loops
+    print("[*] Calculating inner and outer loops...")
     args.depth, args.geoblast = set_inner_loops(staff_count, args)
     outer_loops = set_outer_loops(args)
 
