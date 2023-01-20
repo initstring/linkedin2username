@@ -648,6 +648,11 @@ def write_files(company, domain, employees, out_dir):
     # Write out all the raw and mutated names to files
     with open(f'{out_dir}/{company}-rawnames.txt', 'w', encoding='utf-8') as outfile:
         for employee in employees:
+            outfile.write(employee["full_name"] + '\n')
+
+    with open(f'{out_dir}/{company}-metadata.txt', 'w', encoding='utf-8') as outfile:
+        outfile.write('full_name,occupation\n')
+        for employee in employees:
             outfile.write(employee["full_name"] + "," + employee["occupation"] + '\n')
 
     with open(f'{out_dir}/{company}-flast.txt', 'w', encoding='utf-8') as outfile:
