@@ -15,6 +15,7 @@ Here's what you get:
 - first.txt       Usernames like Joe
 - lastf.txt       Usernames like SchmoeJ
 - rawnames.txt:   Full name like Joe Schmoe
+- metadata.txt    CSV file which is full_name,occupation
 
 Optionally, the tool will append @domain.xxx to the usernames.
 
