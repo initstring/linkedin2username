@@ -371,18 +371,15 @@ def get_company_info(name, session):
     The company name can be found easily by browsing LinkedIn in a web browser,
     searching for the company, and looking at the name in the address bar.
     """
-    # The following regexes may be moving targets, I will try to keep them up
-    # to date. If you have issues with these, please open a ticket on GitHub.
-    # Thanks!
-    regexes = {'website': r'companyPageUrl":"(http.*?)"',
-               'staff': r'staffCount":([0-9]+),',
-               'id': r'"objectUrn":"urn:li:company:([0-9]+)"',
-               'desc': r'tagline":"(.*?)"'}
     escaped_name = urllib.parse.quote_plus(name)
 
     response = session.get(('https://www.linkedin.com'
                             '/voyager/api/organization/companies?'
                             'q=universalName&universalName=' + escaped_name))
+
+    if response.status_code == 404:
+        print("[!] Could not find that company name. Please double-check LinkedIn and try again.")
+        sys.exit()
 
     # Some geo regions are being fed a 'lite' version of LinkedIn mobile:
     # https://bit.ly/2vGcft0
@@ -396,33 +393,28 @@ def get_company_info(name, session):
         print("    A permanent fix is being researched. Sorry about that!")
         sys.exit()
 
-    # Will search for the company ID in the response. If not found, the
-    # program cannot succeed and must exit.
-    found_id = re.findall(regexes['id'], response.text)
-    if not found_id:
-        print("[!] Could not find that company name. Please double-check LinkedIn and try again.")
-        sys.exit()
+    response_json = json.loads(response.text)
+    #print(response_json)
+    company = response_json["elements"][0]
 
-    # Below we will try to scrape metadata on the company. If not found, will
-    # set generic strings as warnings.
-    found_desc = re.findall(regexes['desc'], response.text)
-    if not found_desc:
-        found_desc = ["NOT FOUND"]
-    found_staff = re.findall(regexes['staff'], response.text)
-    if not found_staff:
-        found_staff = ["RegEx issues, please open a ticket on GitHub!"]
-    found_website = re.findall(regexes['website'], response.text)
-    if not found_website:
-        found_website = ["RegEx issues, please open a ticket on GitHub!"]
+    found_name = company['name'] or "NOT FOUND"
+    found_desc = company['tagline'] or "NOT FOUND"
+    found_staff = company['staffCount']
+    found_website = company['companyPageUrl'] or "NOT FOUND"
 
-    print("          ID:    " + found_id[0])
-    print("          Alias: " + name)
-    print("          Desc:  " + found_desc[0])
-    print("          Staff: " + str(found_staff[0]))
-    print("          URL:   " + found_website[0])
+    # We need the numerical id to search for employee info. This one requires some finessing
+    # as it is a portion of a string inside the key.
+    # Example: "urn:li:company:1111111111" - we need that 1111111111
+    found_id = company['trackingInfo']['objectUrn'].split(':')[-1]
+
+    print("          Name: " + found_name)
+    print("          ID: " + found_id)
+    print("          Desc:  " + found_desc)
+    print("          Staff: " + str(found_staff))
+    print("          URL:   " + found_website)
     print(f"\n[*] Hopefully that's the right {name}! If not, check LinkedIn and try again.\n")
 
-    return (found_id[0], int(found_staff[0]))
+    return (found_id, found_staff)
 
 
 def set_outer_loops(args):
