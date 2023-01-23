@@ -14,6 +14,7 @@ import re
 import time
 import argparse
 import getpass
+import json
 import urllib.parse
 import requests
 import urllib3
@@ -529,10 +530,7 @@ def do_loops(session, company_id, outer_loops, args):
     This is broken into an individual function both to reduce complexity but also to
     allow a Ctrl-C to happen and to still write the data we've scraped so far.
 
-    The data returned is similar to JSON, but not always formatted properly.
-    The regex queries below will build individual lists of first and last
-    names. Every search tested returns an even number of each, so we can safely
-    match the two lists together to get full names.
+    The mobile site used returns proper JSON, which is parsed in this function.
 
     Has the concept of inner an outer loops. Outerloops come into play when
     using --keywords or --geoblast, both which attempt to bypass the 1,000
@@ -568,9 +566,6 @@ def do_loops(session, company_id, outer_loops, args):
                 sys.stdout.flush()
                 sys.stdout.write(f"[*] Scraping results on loop {str(page+1)}...    ")
                 result = get_results(session, company_id, page, current_region, current_keyword)
-                first_name = re.findall(r'"firstName":"(.*?)"', result)
-                last_name = re.findall(r'"lastName":"(.*?)"', result)
-                occupation = re.findall(r'"occupation":"(.*?)"', result)
 
                 # Commercial Search Limit might be triggered
                 if "UPSELL_LIMIT" in result:
@@ -579,32 +574,29 @@ def do_loops(session, company_id, outer_loops, args):
                           "Try again on the 1st of the month. Sorry. :(")
                     break
 
-                # If the list of names is empty for a page, we assume that
-                # there are no more search results. Either you got them all or
-                # you are not connected enough to get them all.
-                if not first_name and not last_name:
+                result_json = json.loads(result)
+
+                # When you get to the last page of results, the next page will have an empty
+                # "elements" list.
+                if not result_json['elements']:
                     sys.stdout.write('\n')
                     print("[*] We have hit the end of the road! Moving on...")
                     break
 
-                # re.findall puts all first names and all last names in a list.
-                # They are ordered, so the pairs should correspond with each other.
-                # We parse through them all here, and see which ones are new to us.
-                for first, last, job in zip(first_name, last_name, occupation):
-                    employee = {}
-                    full_name = first + ' ' + last
+                # The "elements" list is the mini-profile you see when scrolling through a 
+                # company's employees. It does not have all info on the person, like their
+                # entire job history. It only has some basics.
+                for body in result_json['elements']:
+                    profile = body['hitInfo']['com.linkedin.voyager.search.SearchProfile']['miniProfile']
+                    full_name = f"{profile['firstName']} {profile['lastName']}"
+                    employee = {'full_name': full_name,
+                        'occupation': profile['occupation']}
 
-                    # Off-By-One Running Total Patch: Ensures that a blank first and
-                    # last name are not added to the list of full names.
-                    if len(full_name) <= 1:
-                        continue
-
-                    employee["full_name"] = full_name
-                    employee["occupation"] = job
-
-                    if employee not in employee_list:
+                    # Some employee names are not disclosed and return empty. We don't want those.
+                    if len(employee['full_name']) > 1 and employee not in employee_list:
                         employee_list.append(employee)
                         new_names += 1
+                        
                 sys.stdout.write(f"    [*] Added {str(new_names)} new names. "
                                  f"Running total: {str(len(employee_list))}"
                                  "              \r")
