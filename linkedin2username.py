@@ -394,7 +394,7 @@ def get_company_info(name, session):
         sys.exit()
 
     response_json = json.loads(response.text)
-    #print(response_json)
+
     company = response_json["elements"][0]
 
     found_name = company['name'] or "NOT FOUND"
@@ -575,20 +575,22 @@ def do_loops(session, company_id, outer_loops, args):
                     print("[*] We have hit the end of the road! Moving on...")
                     break
 
-                # The "elements" list is the mini-profile you see when scrolling through a 
+                # The "elements" list is the mini-profile you see when scrolling through a
                 # company's employees. It does not have all info on the person, like their
                 # entire job history. It only has some basics.
                 for body in result_json['elements']:
-                    profile = body['hitInfo']['com.linkedin.voyager.search.SearchProfile']['miniProfile']
+                    profile = (body['hitInfo']
+                               ['com.linkedin.voyager.search.SearchProfile']
+                               ['miniProfile'])
                     full_name = f"{profile['firstName']} {profile['lastName']}"
                     employee = {'full_name': full_name,
-                        'occupation': profile['occupation']}
+                                'occupation': profile['occupation']}
 
                     # Some employee names are not disclosed and return empty. We don't want those.
                     if len(employee['full_name']) > 1 and employee not in employee_list:
                         employee_list.append(employee)
                         new_names += 1
-                        
+
                 sys.stdout.write(f"    [*] Added {str(new_names)} new names. "
                                  f"Running total: {str(len(employee_list))}"
                                  "              \r")
