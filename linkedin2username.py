@@ -543,7 +543,7 @@ def do_loops(session, company_id, outer_loops, args):
     # Crafting the right URL is a bit tricky, so currently unnecessary
     # parameters are still being included but set to empty. You will see this
     # below with geoblast and keywords.
-    full_name_list = []
+    employee_list = []
 
     # We want to be able to break here with Ctrl-C and still write the names we have
     try:
@@ -564,11 +564,13 @@ def do_loops(session, company_id, outer_loops, args):
             # This is the inner loop. It will search results 25 at a time.
             for page in range(0, args.depth):
                 new_names = 0
+
                 sys.stdout.flush()
                 sys.stdout.write(f"[*] Scraping results on loop {str(page+1)}...    ")
                 result = get_results(session, company_id, page, current_region, current_keyword)
                 first_name = re.findall(r'"firstName":"(.*?)"', result)
                 last_name = re.findall(r'"lastName":"(.*?)"', result)
+                occupation = re.findall(r'"occupation":"(.*?)"', result)
 
                 # Commercial Search Limit might be triggered
                 if "UPSELL_LIMIT" in result:
@@ -588,7 +590,8 @@ def do_loops(session, company_id, outer_loops, args):
                 # re.findall puts all first names and all last names in a list.
                 # They are ordered, so the pairs should correspond with each other.
                 # We parse through them all here, and see which ones are new to us.
-                for first, last in zip(first_name, last_name):
+                for first, last, job in zip(first_name, last_name, occupation):
+                    employee = {}
                     full_name = first + ' ' + last
 
                     # Off-By-One Running Total Patch: Ensures that a blank first and
@@ -596,11 +599,14 @@ def do_loops(session, company_id, outer_loops, args):
                     if len(full_name) <= 1:
                         continue
 
-                    if full_name not in full_name_list:
-                        full_name_list.append(full_name)
+                    employee["full_name"] = full_name
+                    employee["occupation"] = job
+
+                    if employee not in employee_list:
+                        employee_list.append(employee)
                         new_names += 1
                 sys.stdout.write(f"    [*] Added {str(new_names)} new names. "
-                                 f"Running total: {str(len(full_name_list))}"
+                                 f"Running total: {str(len(employee_list))}"
                                  "              \r")
 
                 # If the user has defined a sleep between loops, we take a little
@@ -609,23 +615,23 @@ def do_loops(session, company_id, outer_loops, args):
     except KeyboardInterrupt:
         print("\n\n[!] Caught Ctrl-C. Breaking loops and writing files")
 
-    return full_name_list
+    return employee_list
 
 
-def write_lines(found_names, name_func, domain, outfile):
+def write_lines(employees, name_func, domain, outfile):
     """
     Helper function to mutate names and write to an outfile
 
     Needs to be called with a string variable in name_func that matches the class method
     name in the NameMutator class.
     """
-    for name in found_names:
-        mutator = NameMutator(name)
+    for employee in employees:
+        mutator = NameMutator(employee["full_name"])
         for name in getattr(mutator, name_func)():
             outfile.write(name + domain + '\n')
 
 
-def write_files(company, domain, found_names, out_dir):
+def write_files(company, domain, employees, out_dir):
     """Writes data to various formatted output files.
 
     After scraping and processing is complete, this function formats the raw
@@ -641,26 +647,31 @@ def write_files(company, domain, found_names, out_dir):
 
     # Write out all the raw and mutated names to files
     with open(f'{out_dir}/{company}-rawnames.txt', 'w', encoding='utf-8') as outfile:
-        for name in found_names:
-            outfile.write(name + '\n')
+        for employee in employees:
+            outfile.write(employee['full_name'] + '\n')
+
+    with open(f'{out_dir}/{company}-metadata.txt', 'w', encoding='utf-8') as outfile:
+        outfile.write('full_name,occupation\n')
+        for employee in employees:
+            outfile.write(employee['full_name'] + ',' + employee["occupation"] + '\n')
 
     with open(f'{out_dir}/{company}-flast.txt', 'w', encoding='utf-8') as outfile:
-        write_lines(found_names, 'f_last', domain, outfile)
+        write_lines(employees, 'f_last', domain, outfile)
 
     with open(f'{out_dir}/{company}-f.last.txt', 'w', encoding='utf-8') as outfile:
-        write_lines(found_names, 'f_dot_last', domain, outfile)
+        write_lines(employees, 'f_dot_last', domain, outfile)
 
     with open(f'{out_dir}/{company}-firstl.txt', 'w', encoding='utf-8') as outfile:
-        write_lines(found_names, 'first_l', domain, outfile)
+        write_lines(employees, 'first_l', domain, outfile)
 
     with open(f'{out_dir}/{company}-first.last.txt', 'w', encoding='utf-8') as outfile:
-        write_lines(found_names, 'first_dot_last', domain, outfile)
+        write_lines(employees, 'first_dot_last', domain, outfile)
 
     with open(f'{out_dir}/{company}-first.txt', 'w', encoding='utf-8') as outfile:
-        write_lines(found_names, 'first', domain, outfile)
+        write_lines(employees, 'first', domain, outfile)
 
     with open(f'{out_dir}/{company}-lastf.txt', 'w', encoding='utf-8') as outfile:
-        write_lines(found_names, 'last_f', domain, outfile)
+        write_lines(employees, 'last_f', domain, outfile)
 
 
 def main():
@@ -689,10 +700,10 @@ def main():
 
     # Do the actual searching
     print("[*] Starting search.... Press Ctrl-C to break and write files early.\n")
-    found_names = do_loops(session, company_id, outer_loops, args)
+    employees = do_loops(session, company_id, outer_loops, args)
 
     # Write the data to some files.
-    write_files(args.company, args.domain, found_names, args.output)
+    write_files(args.company, args.domain, employees, args.output)
 
     # Time to get hacking.
     print(f"\n\n[*] All done! Check out your lovely new files in {args.output}")
