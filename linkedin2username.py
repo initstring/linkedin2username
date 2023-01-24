@@ -606,6 +606,8 @@ def do_loops(session, company_id, outer_loops, args):
                     break
 
                 new_names += len(found_employees)
+                employee_list.extend(found_employees)
+
 
                 sys.stdout.write(f"    [*] Added {str(new_names)} new names. "
                                  f"Running total: {str(len(employee_list))}"
