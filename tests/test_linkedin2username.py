@@ -146,3 +146,6 @@ def test_find_employees():
     assert employees[0] == {'full_name': 'Michael Myers', 'occupation': 'Camp Counsellor'}
     assert employees[1] == {'full_name': 'Freddy Krueger', 'occupation': 'Babysitter'}
 
+    result = '{"elements": []}'
+    assert not linkedin2username.find_employees(result)
+
