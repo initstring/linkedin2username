@@ -1,3 +1,4 @@
+import linkedin2username
 from linkedin2username import NameMutator
 
 # Test name mutations
@@ -134,3 +135,14 @@ def test_split_name():
 
     name = "brian warner is marilyn manson"
     assert mutator.split_name(name) == {"first": "brian", "second": "marilyn", "last": "manson"}
+
+
+def test_find_employees():
+    with open("tests/mock-employee-response", "r") as infile:
+        result = infile.read()
+    employees = linkedin2username.find_employees(result)
+
+    assert len(employees) == 2
+    assert employees[0] == {'full_name': 'Michael Myers', 'occupation': 'Camp Counsellor'}
+    assert employees[1] == {'full_name': 'Freddy Krueger', 'occupation': 'Babysitter'}
+
