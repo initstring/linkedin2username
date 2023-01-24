@@ -14,6 +14,7 @@ import re
 import time
 import argparse
 import getpass
+import json
 import urllib.parse
 import requests
 import urllib3
@@ -370,18 +371,15 @@ def get_company_info(name, session):
     The company name can be found easily by browsing LinkedIn in a web browser,
     searching for the company, and looking at the name in the address bar.
     """
-    # The following regexes may be moving targets, I will try to keep them up
-    # to date. If you have issues with these, please open a ticket on GitHub.
-    # Thanks!
-    regexes = {'website': r'companyPageUrl":"(http.*?)"',
-               'staff': r'staffCount":([0-9]+),',
-               'id': r'"objectUrn":"urn:li:company:([0-9]+)"',
-               'desc': r'tagline":"(.*?)"'}
     escaped_name = urllib.parse.quote_plus(name)
 
     response = session.get(('https://www.linkedin.com'
                             '/voyager/api/organization/companies?'
                             'q=universalName&universalName=' + escaped_name))
+
+    if response.status_code == 404:
+        print("[!] Could not find that company name. Please double-check LinkedIn and try again.")
+        sys.exit()
 
     # Some geo regions are being fed a 'lite' version of LinkedIn mobile:
     # https://bit.ly/2vGcft0
@@ -395,33 +393,28 @@ def get_company_info(name, session):
         print("    A permanent fix is being researched. Sorry about that!")
         sys.exit()
 
-    # Will search for the company ID in the response. If not found, the
-    # program cannot succeed and must exit.
-    found_id = re.findall(regexes['id'], response.text)
-    if not found_id:
-        print("[!] Could not find that company name. Please double-check LinkedIn and try again.")
-        sys.exit()
+    response_json = json.loads(response.text)
 
-    # Below we will try to scrape metadata on the company. If not found, will
-    # set generic strings as warnings.
-    found_desc = re.findall(regexes['desc'], response.text)
-    if not found_desc:
-        found_desc = ["NOT FOUND"]
-    found_staff = re.findall(regexes['staff'], response.text)
-    if not found_staff:
-        found_staff = ["RegEx issues, please open a ticket on GitHub!"]
-    found_website = re.findall(regexes['website'], response.text)
-    if not found_website:
-        found_website = ["RegEx issues, please open a ticket on GitHub!"]
+    company = response_json["elements"][0]
 
-    print("          ID:    " + found_id[0])
-    print("          Alias: " + name)
-    print("          Desc:  " + found_desc[0])
-    print("          Staff: " + str(found_staff[0]))
-    print("          URL:   " + found_website[0])
+    found_name = company['name'] or "NOT FOUND"
+    found_desc = company['tagline'] or "NOT FOUND"
+    found_staff = company['staffCount']
+    found_website = company['companyPageUrl'] or "NOT FOUND"
+
+    # We need the numerical id to search for employee info. This one requires some finessing
+    # as it is a portion of a string inside the key.
+    # Example: "urn:li:company:1111111111" - we need that 1111111111
+    found_id = company['trackingInfo']['objectUrn'].split(':')[-1]
+
+    print("          Name: " + found_name)
+    print("          ID: " + found_id)
+    print("          Desc:  " + found_desc)
+    print("          Staff: " + str(found_staff))
+    print("          URL:   " + found_website)
     print(f"\n[*] Hopefully that's the right {name}! If not, check LinkedIn and try again.\n")
 
-    return (found_id[0], int(found_staff[0]))
+    return (found_id, found_staff)
 
 
 def set_outer_loops(args):
@@ -522,6 +515,38 @@ def get_results(session, company_id, page, region, keyword):
     return result.text
 
 
+def find_employees(result):
+    """
+    Takes the text response of an HTTP query, converst to JSON, and extracts employee details.
+
+    Retuns a list of dictionary items, or False if none found.
+    """
+    found_employees = []
+    result_json = json.loads(result)
+
+    # When you get to the last page of results, the next page will have an empty
+    # "elements" list.
+    if not result_json['elements']:
+        return False
+
+    # The "elements" list is the mini-profile you see when scrolling through a
+    # company's employees. It does not have all info on the person, like their
+    # entire job history. It only has some basics.
+    for body in result_json['elements']:
+        profile = (body['hitInfo']
+                       ['com.linkedin.voyager.search.SearchProfile']
+                       ['miniProfile'])
+        full_name = f"{profile['firstName']} {profile['lastName']}"
+        employee = {'full_name': full_name,
+                    'occupation': profile['occupation']}
+
+        # Some employee names are not disclosed and return empty. We don't want those.
+        if len(employee['full_name']) > 1:
+            found_employees.append(employee)
+
+    return found_employees
+
+
 def do_loops(session, company_id, outer_loops, args):
     """
     Performs looping where the actual HTTP requests to scrape names occurs
@@ -529,10 +554,7 @@ def do_loops(session, company_id, outer_loops, args):
     This is broken into an individual function both to reduce complexity but also to
     allow a Ctrl-C to happen and to still write the data we've scraped so far.
 
-    The data returned is similar to JSON, but not always formatted properly.
-    The regex queries below will build individual lists of first and last
-    names. Every search tested returns an even number of each, so we can safely
-    match the two lists together to get full names.
+    The mobile site used returns proper JSON, which is parsed in this function.
 
     Has the concept of inner an outer loops. Outerloops come into play when
     using --keywords or --geoblast, both which attempt to bypass the 1,000
@@ -568,9 +590,6 @@ def do_loops(session, company_id, outer_loops, args):
                 sys.stdout.flush()
                 sys.stdout.write(f"[*] Scraping results on loop {str(page+1)}...    ")
                 result = get_results(session, company_id, page, current_region, current_keyword)
-                first_name = re.findall(r'"firstName":"(.*?)"', result)
-                last_name = re.findall(r'"lastName":"(.*?)"', result)
-                occupation = re.findall(r'"occupation":"(.*?)"', result)
 
                 # Commercial Search Limit might be triggered
                 if "UPSELL_LIMIT" in result:
@@ -579,32 +598,17 @@ def do_loops(session, company_id, outer_loops, args):
                           "Try again on the 1st of the month. Sorry. :(")
                     break
 
-                # If the list of names is empty for a page, we assume that
-                # there are no more search results. Either you got them all or
-                # you are not connected enough to get them all.
-                if not first_name and not last_name:
+                found_employees = find_employees(result)
+
+                if not found_employees:
                     sys.stdout.write('\n')
                     print("[*] We have hit the end of the road! Moving on...")
                     break
 
-                # re.findall puts all first names and all last names in a list.
-                # They are ordered, so the pairs should correspond with each other.
-                # We parse through them all here, and see which ones are new to us.
-                for first, last, job in zip(first_name, last_name, occupation):
-                    employee = {}
-                    full_name = first + ' ' + last
+                new_names += len(found_employees)
+                employee_list.extend(found_employees)
 
-                    # Off-By-One Running Total Patch: Ensures that a blank first and
-                    # last name are not added to the list of full names.
-                    if len(full_name) <= 1:
-                        continue
 
-                    employee["full_name"] = full_name
-                    employee["occupation"] = job
-
-                    if employee not in employee_list:
-                        employee_list.append(employee)
-                        new_names += 1
                 sys.stdout.write(f"    [*] Added {str(new_names)} new names. "
                                  f"Running total: {str(len(employee_list))}"
                                  "              \r")
