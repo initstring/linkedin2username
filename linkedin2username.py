@@ -515,6 +515,38 @@ def get_results(session, company_id, page, region, keyword):
     return result.text
 
 
+def find_employees(result):
+    """
+    Takes the text response of an HTTP query, converst to JSON, and extracts employee details.
+
+    Retuns a list of dictionary items, or False if none found.
+    """
+    found_employees = []
+    result_json = json.loads(result)
+
+    # When you get to the last page of results, the next page will have an empty
+    # "elements" list.
+    if not result_json['elements']:
+        return False
+
+    # The "elements" list is the mini-profile you see when scrolling through a
+    # company's employees. It does not have all info on the person, like their
+    # entire job history. It only has some basics.
+    for body in result_json['elements']:
+        profile = (body['hitInfo']
+                       ['com.linkedin.voyager.search.SearchProfile']
+                       ['miniProfile'])
+        full_name = f"{profile['firstName']} {profile['lastName']}"
+        employee = {'full_name': full_name,
+                    'occupation': profile['occupation']}
+
+        # Some employee names are not disclosed and return empty. We don't want those.
+        if len(employee['full_name']) > 1:
+            found_employees.append(employee)
+
+    return found_employees
+
+
 def do_loops(session, company_id, outer_loops, args):
     """
     Performs looping where the actual HTTP requests to scrape names occurs
@@ -566,30 +598,14 @@ def do_loops(session, company_id, outer_loops, args):
                           "Try again on the 1st of the month. Sorry. :(")
                     break
 
-                result_json = json.loads(result)
+                found_employees = find_employees(result)
 
-                # When you get to the last page of results, the next page will have an empty
-                # "elements" list.
-                if not result_json['elements']:
+                if not found_employees:
                     sys.stdout.write('\n')
                     print("[*] We have hit the end of the road! Moving on...")
                     break
 
-                # The "elements" list is the mini-profile you see when scrolling through a
-                # company's employees. It does not have all info on the person, like their
-                # entire job history. It only has some basics.
-                for body in result_json['elements']:
-                    profile = (body['hitInfo']
-                               ['com.linkedin.voyager.search.SearchProfile']
-                               ['miniProfile'])
-                    full_name = f"{profile['firstName']} {profile['lastName']}"
-                    employee = {'full_name': full_name,
-                                'occupation': profile['occupation']}
-
-                    # Some employee names are not disclosed and return empty. We don't want those.
-                    if len(employee['full_name']) > 1 and employee not in employee_list:
-                        employee_list.append(employee)
-                        new_names += 1
+                new_names += len(found_employees)
 
                 sys.stdout.write(f"    [*] Added {str(new_names)} new names. "
                                  f"Running total: {str(len(employee_list))}"
