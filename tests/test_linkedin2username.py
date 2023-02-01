@@ -7,7 +7,7 @@ TEST_NAMES = {
     1: "John Smith",
     2: "John Davidson-Smith",
     3: "John-Paul Smith-Robinson",
-    4: "José Gonzáles"
+    4: "José Gonzáles",
 }
 
 
@@ -123,6 +123,15 @@ def test_clean_name():
     mutator = NameMutator("xxx")
     assert mutator.clean_name("  🙂Ànèôõö    ßï🙂  ") == "aneooo ssi"
 
+    name = "Dr. Hannibal Lecter, PhD."
+    assert mutator.clean_name(name) == "hannibal lecter"
+
+    name = "Mr. Fancy Pants MD, PhD, MBA"
+    assert mutator.clean_name(name) == "fancy pants"
+
+    name = "Mr. Cert Dude (OSCP, OSCE)"
+    assert mutator.clean_name(name) == "cert dude"
+
 
 def test_split_name():
     mutator = NameMutator("xxx")
@@ -131,7 +140,7 @@ def test_split_name():
     assert mutator.split_name(name) == {"first": "madonna", "second": "wayne", "last": "gacey"}
 
     name = "twiggy ramirez"
-    assert mutator.split_name(name) == {"first": "twiggy", "last": "ramirez"}
+    assert mutator.split_name(name) == {"first": "twiggy", "second": "", "last": "ramirez"}
 
     name = "brian warner is marilyn manson"
     assert mutator.split_name(name) == {"first": "brian", "second": "marilyn", "last": "manson"}

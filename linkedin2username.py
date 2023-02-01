@@ -87,11 +87,19 @@ class NameMutator():
         name = re.sub("[ß]", 'ss', name)
         name = re.sub("[ñ]", 'n', name)
 
+        # Get rid of all things in parenthesis. Lots of people put various credentials, etc
+        name = re.sub(r'\([^()]*\)', '', name)
+
         # The lines below basically trash anything weird left over.
         # A lot of users have funny things in their names, like () or ''
         # People like to feel special, I guess.
         allowed_chars = re.compile('[^a-zA-Z -]')
         name = allowed_chars.sub('', name)
+
+        # Next, we get rid of common titles. Thanks ChatGPT for the help.
+        titles = ['mr', 'miss', 'mrs', 'phd', 'prof', 'professor', 'md', 'dr', 'mba']
+        pattern = "\\b(" + "|".join(titles) + ")\\b"
+        name = re.sub(pattern, '', name)
 
         # The line below tries to consolidate white space between words
         # and get rid of leading/trailing spaces.
@@ -112,7 +120,7 @@ class NameMutator():
         if len(parsed) > 2:
             split_name = {'first': parsed[0], 'second': parsed[-2], 'last': parsed[-1]}
         else:
-            split_name = {'first': parsed[0], 'last': parsed[-1]}
+            split_name = {'first': parsed[0], 'second': '', 'last': parsed[-1]}
 
         return split_name
 
@@ -121,7 +129,7 @@ class NameMutator():
         names = set()
         names.add(self.name['first'][0] + self.name['last'])
 
-        if len(self.name) == 3:
+        if self.name['second']:
             names.add(self.name['first'][0] + self.name['second'])
 
         return names
@@ -131,7 +139,7 @@ class NameMutator():
         names = set()
         names.add(self.name['first'][0] + '.' + self.name['last'])
 
-        if len(self.name) == 3:
+        if self.name['second']:
             names.add(self.name['first'][0] + '.' + self.name['second'])
 
         return names
@@ -141,7 +149,7 @@ class NameMutator():
         names = set()
         names.add(self.name['last'] + self.name['first'][0])
 
-        if len(self.name) == 3:
+        if self.name['second']:
             names.add(self.name['second'] + self.name['first'][0])
 
         return names
@@ -151,7 +159,7 @@ class NameMutator():
         names = set()
         names.add(self.name['first'] + '.' + self.name['last'])
 
-        if len(self.name) == 3:
+        if self.name['second']:
             names.add(self.name['first'] + '.' + self.name['second'])
 
         return names
@@ -161,7 +169,7 @@ class NameMutator():
         names = set()
         names.add(self.name['first'] + self.name['last'][0])
 
-        if len(self.name) == 3:
+        if self.name['second']:
             names.add(self.name['first'] + self.name['second'][0])
 
         return names
@@ -607,7 +615,6 @@ def do_loops(session, company_id, outer_loops, args):
 
                 new_names += len(found_employees)
                 employee_list.extend(found_employees)
-
 
                 sys.stdout.write(f"    [*] Added {str(new_names)} new names. "
                                  f"Running total: {str(len(employee_list))}"
