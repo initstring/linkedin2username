@@ -96,7 +96,7 @@ class NameMutator():
         allowed_chars = re.compile('[^a-zA-Z -]')
         name = allowed_chars.sub('', name)
 
-        ## Next, we get rid of common titles. Thanks ChatGPT for the help.
+        # Next, we get rid of common titles. Thanks ChatGPT for the help.
         titles = ['mr', 'miss', 'mrs', 'phd', 'prof', 'professor', 'md', 'dr', 'mba']
         pattern = "\\b(" + "|".join(titles) + ")\\b"
         name = re.sub(pattern, '', name)
@@ -615,7 +615,6 @@ def do_loops(session, company_id, outer_loops, args):
 
                 new_names += len(found_employees)
                 employee_list.extend(found_employees)
-
 
                 sys.stdout.write(f"    [*] Added {str(new_names)} new names. "
                                  f"Running total: {str(len(employee_list))}"
