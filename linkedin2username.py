@@ -619,7 +619,7 @@ def do_loops(session, company_id, outer_loops, args):
                 sys.stdout.write(f"[*] Scraping results on loop {str(page+1)}...    ")
                 result = get_results(session, company_id, page, current_region, current_keyword)
 
-                if result.status_code !=200:
+                if result.status_code != 200:
                     print(f"\n[!] Yikes, got an HTTP {result.status_code}. This is not normal")
                     print("Bailing from loops, but you should troubleshoot.")
                     break
