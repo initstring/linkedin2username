@@ -389,6 +389,11 @@ def get_company_info(name, session):
         print("[!] Could not find that company name. Please double-check LinkedIn and try again.")
         sys.exit()
 
+    if response.status_code != 200:
+        print("[!] Unexpected HTTP response code when trying to get the company info:")
+        print(f"    {response.status_code}")
+        sys.exit()
+
     # Some geo regions are being fed a 'lite' version of LinkedIn mobile:
     # https://bit.ly/2vGcft0
     # The following bit is a temporary fix until I can figure out a
@@ -401,14 +406,20 @@ def get_company_info(name, session):
         print("    A permanent fix is being researched. Sorry about that!")
         sys.exit()
 
-    response_json = json.loads(response.text)
+    try:
+        response_json = json.loads(response.text)
+    except json.decoder.JSONDecodeError:
+        print("[!] Yikes! Could not decode JSON when getting company info! :(")
+        print("Here's the first 200 characters of the HTTP reply which may help in debugging:\n\n")
+        print(response.text[:200])
+        sys.exit()
 
     company = response_json["elements"][0]
 
-    found_name = company['name'] or "NOT FOUND"
-    found_desc = company['tagline'] or "NOT FOUND"
+    found_name = company.get('name', "NOT FOUND")
+    found_desc = company.get('tagline', "NOT FOUND")
     found_staff = company['staffCount']
-    found_website = company['companyPageUrl'] or "NOT FOUND"
+    found_website = company.get('companyPageUrl', "NOT FOUND")
 
     # We need the numerical id to search for employee info. This one requires some finessing
     # as it is a portion of a string inside the key.
@@ -520,7 +531,7 @@ def get_results(session, company_id, page, region, keyword):
 
     # Perform the search for this iteration.
     result = session.get(url)
-    return result.text
+    return result
 
 
 def find_employees(result):
@@ -530,7 +541,16 @@ def find_employees(result):
     Retuns a list of dictionary items, or False if none found.
     """
     found_employees = []
-    result_json = json.loads(result)
+
+    try:
+        result_json = json.loads(result)
+    except json.decoder.JSONDecodeError:
+        print("\n[!] Yikes! Could not decode JSON when scraping this loop! :(")
+        print("I'm going to bail on scraping names now, but this isn't normal. You should "
+              "troubleshoot or open an issue.")
+        print("Here's the first 200 characters of the HTTP reply which may help in debugging:\n\n")
+        print(result[:200])
+        return False
 
     # When you get to the last page of results, the next page will have an empty
     # "elements" list.
@@ -599,14 +619,19 @@ def do_loops(session, company_id, outer_loops, args):
                 sys.stdout.write(f"[*] Scraping results on loop {str(page+1)}...    ")
                 result = get_results(session, company_id, page, current_region, current_keyword)
 
+                if result.status_code != 200:
+                    print(f"\n[!] Yikes, got an HTTP {result.status_code}. This is not normal")
+                    print("Bailing from loops, but you should troubleshoot.")
+                    break
+
                 # Commercial Search Limit might be triggered
-                if "UPSELL_LIMIT" in result:
+                if "UPSELL_LIMIT" in result.text:
                     sys.stdout.write('\n')
                     print("[!] You've hit the commercial search limit! "
                           "Try again on the 1st of the month. Sorry. :(")
                     break
 
-                found_employees = find_employees(result)
+                found_employees = find_employees(result.text)
 
                 if not found_employees:
                     sys.stdout.write('\n')
