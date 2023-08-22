@@ -291,7 +291,8 @@ def login(args):
                     'Build/KOT49H) AppleWebKit/534.30 (KHTML, like Gecko) '
                     'Version/4.0 Mobile Safari/534.30')
     session.headers.update({'User-Agent': mobile_agent,
-                            'X-RestLi-Protocol-Version': '2.0.0'})
+                            'X-RestLi-Protocol-Version': '2.0.0',
+                            'X-Li-Track': '{"clientVersion":"1.13.1665"}'})
 
     # We wll grab an anonymous response to look for the CSRF token, which
     # is required for our logon attempt.
