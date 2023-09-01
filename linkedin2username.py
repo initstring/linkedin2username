@@ -203,6 +203,9 @@ def parse_arguments():
                         help='Specify your password in clear-text on the '
                         'command line. If not specified, will prompt and '
                         'obfuscate as you type.')
+    parser.add_argument('--cookie', type=str, action='store',
+                        help='Instead of logging in with a password, '
+                        'provide the li_at cookie assigned after login ')
     parser.add_argument('-n', '--domain', type=str, action='store',
                         default='',
                         help='Append a domain name to username output. '
@@ -253,7 +256,8 @@ def parse_arguments():
 
     # If password is not passed in the command line, prompt for it
     # in a more secure fashion (not shown on screen)
-    args.password = args.password or getpass.getpass()
+    if args.cookie is None: 
+        rgs.password = args.password or getpass.getpass()
 
     return args
 
@@ -312,6 +316,14 @@ def login(args):
         'isJsEnabled': 'false',
         'loginCsrfParam': login_csrf
         }
+
+    # If authentication via cookies is specified, set the important cookie 
+    # and return the session
+    if args.cookie is not None:
+
+        session.cookies['li_at'] = args.cookie
+        return session
+
 
     # Perform the actual login. We disable redirects as we will use that 302
     # as an indicator of a successful logon.
