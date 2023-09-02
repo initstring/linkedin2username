@@ -319,7 +319,7 @@ def login(args):
 
     # If authentication via cookies is specified, set the important cookie 
     # and return the session
-    if args.cookie is not None:
+    if args.cookie:
 
         session.cookies['li_at'] = args.cookie
         return session
