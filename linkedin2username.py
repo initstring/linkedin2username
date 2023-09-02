@@ -257,7 +257,7 @@ def parse_arguments():
     # If password is not passed in the command line, prompt for it
     # in a more secure fashion (not shown on screen)
     if args.cookie is None: 
-        rgs.password = args.password or getpass.getpass()
+        args.password = args.password or getpass.getpass()
 
     return args
 
