@@ -16,7 +16,7 @@ import argparse
 import json
 import urllib.parse
 import requests
-#import urllib3
+import urllib3
 
 from selenium import webdriver
 
@@ -266,6 +266,17 @@ def login():
     session = requests.Session()
     for cookie in selenium_cookies:
         session.cookies.set(cookie['name'], cookie['value'])
+
+    # Add headers required for this tool to function
+    mobile_agent = ('Mozilla/5.0 (Linux; U; Android 4.4.2; en-us; SCH-I535 '
+                    'Build/KOT49H) AppleWebKit/534.30 (KHTML, like Gecko) '
+                    'Version/4.0 Mobile Safari/534.30')
+    session.headers.update({'User-Agent': mobile_agent,
+                             'X-RestLi-Protocol-Version': '2.0.0',
+                             'X-Li-Track': '{"clientVersion":"1.13.1665"}'})
+    
+    # Set the CSRF token
+    session = set_csrf_token(session)
 
     return session
 
@@ -632,6 +643,14 @@ def main():
         sys.exit()
 
     print("[*] Successfully logged in.")
+
+    # Special options below when using a proxy server. Helpful for debugging
+    # the application in Burp Suite.
+    if args.proxy:
+        print("[!] Using a proxy, ignoring SSL errors. Don't get pwned.")
+        session.verify = False
+        urllib3.disable_warnings(category=urllib3.exceptions.InsecureRequestWarning)
+        session.proxies.update(args.proxy_dict)
 
     # Get basic company info
     print("[*] Trying to get company info...")
