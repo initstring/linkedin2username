@@ -13,11 +13,12 @@ import sys
 import re
 import time
 import argparse
-import getpass
 import json
 import urllib.parse
 import requests
-import urllib3
+#import urllib3
+
+from selenium import webdriver
 
 BANNER = r"""
 
@@ -192,17 +193,10 @@ def parse_arguments():
             ' to report any inconsistencies, and they will be quickly fixed.')
     parser = argparse.ArgumentParser(description=desc)
 
-    parser.add_argument('-u', '--username', type=str, action='store',
-                        required=True,
-                        help='A valid LinkedIn username.')
     parser.add_argument('-c', '--company', type=str, action='store',
                         required=True,
                         help='Company name exactly as typed in the company '
                         'linkedin profile page URL.')
-    parser.add_argument('-p', '--password', type=str, action='store',
-                        help='Specify your password in clear-text on the '
-                        'command line. If not specified, will prompt and '
-                        'obfuscate as you type.')
     parser.add_argument('-n', '--domain', type=str, action='store',
                         default='',
                         help='Append a domain name to username output. '
@@ -251,116 +245,29 @@ def parse_arguments():
         print("Sorry, keywords and geoblast are currently not compatible. Use one or the other.")
         sys.exit()
 
-    # If password is not passed in the command line, prompt for it
-    # in a more secure fashion (not shown on screen)
-    args.password = args.password or getpass.getpass()
-
     return args
 
 
-def login(args):
+def login():
     """Creates a new authenticated session.
 
-    Note that a mobile user agent is used. Parsing using the desktop results
-    proved extremely difficult, as shared connections would be returned in
-    a manner that was indistinguishable from the desired targets.
-
-    The other header matters as well, otherwise advanced search functions
-    (region and keyword) will not work.
-
-    The function will check for common failure scenarios - the most common is
-    logging in from a new location. Accounts using multi-factor auth are not
-    yet supported and will produce an error.
+    This now uses Selenium because I got very tired playing cat/mouse
+    with LinkedIn's login process.
     """
-    session = requests.session()
+    driver = webdriver.Firefox()
+    driver.get("https://linkedin.com/login")
 
-    # The following are known errors that require the user to log in via the web
-    login_problems = ['challenge', 'captcha', 'manage-account', 'add-email']
+    # Pause until the user lets us know the session is good.
+    input("Press Enter after you've logged in...")
+    selenium_cookies = driver.get_cookies()
+    driver.quit()
 
-    # Special options below when using a proxy server. Helpful for debugging
-    # the application in Burp Suite.
-    if args.proxy:
-        print("[!] Using a proxy, ignoring SSL errors. Don't get pwned.")
-        session.verify = False
-        urllib3.disable_warnings(category=urllib3.exceptions.InsecureRequestWarning)
-        session.proxies.update(args.proxy_dict)
+    # Initialize and return a requests session
+    session = requests.Session()
+    for cookie in selenium_cookies:
+        session.cookies.set(cookie['name'], cookie['value'])
 
-    # Our search and regex will work only with a mobile user agent and
-    # the correct REST protocol specified below.
-    mobile_agent = ('Mozilla/5.0 (Linux; U; Android 4.4.2; en-us; SCH-I535 '
-                    'Build/KOT49H) AppleWebKit/534.30 (KHTML, like Gecko) '
-                    'Version/4.0 Mobile Safari/534.30')
-    session.headers.update({'User-Agent': mobile_agent,
-                            'X-RestLi-Protocol-Version': '2.0.0',
-                            'X-Li-Track': '{"clientVersion":"1.13.1665"}'})
-
-    # We wll grab an anonymous response to look for the CSRF token, which
-    # is required for our logon attempt.
-    anon_response = session.get('https://www.linkedin.com/login')
-    login_csrf = re.findall(r'name="loginCsrfParam" value="(.*?)"',
-                            anon_response.text)
-    if login_csrf:
-        login_csrf = login_csrf[0]
-    else:
-        print("Having trouble loading login page... try the command again.")
-        sys.exit()
-
-    # Define the data we will POST for our login.
-    auth_payload = {
-        'session_key': args.username,
-        'session_password': args.password,
-        'isJsEnabled': 'false',
-        'loginCsrfParam': login_csrf
-        }
-
-    # Perform the actual login. We disable redirects as we will use that 302
-    # as an indicator of a successful logon.
-    response = session.post('https://www.linkedin.com/checkpoint/lg/login-submit'
-                            '?loginSubmitSource=GUEST_HOME',
-                            data=auth_payload, allow_redirects=False)
-
-    # Define a successful login by the 302 redirect to the 'feed' page. Try
-    # to detect some other common logon failures and alert the user.
-    if response.status_code in (302, 303):
-        # Add CSRF token for all additional requests
-        session = set_csrf_token(session)
-        redirect = response.headers['Location']
-        if 'feed' in redirect:
-            return session
-        if 'add-phone' in redirect:
-            # Skip the prompt to add a phone number
-            url = 'https://www.linkedin.com/checkpoint/post-login/security/dismiss-phone-event'
-            response = session.post(url)
-            if response.status_code == 200:
-                return session
-            print("[!] Could not skip phone prompt. Log in via the web and then try again.\n")
-
-        elif any(x in redirect for x in login_problems):
-            print("[!] LinkedIn has a message for you that you need to address. "
-                  "Please log in using a web browser first, and then come back and try again.")
-        else:
-            # The below will detect some 302 that I don't yet know about.
-            print("[!] Some unknown redirection occurred. If this persists, please open an issue "
-                  "and include the info below:")
-            print("DEBUG INFO:")
-            print(f"LOCATION: {redirect}")
-            print(f"RESPONSE TEXT:\n{response.text}")
-
-        return False
-
-    # A failed logon doesn't generate a 302 at all, but simply responds with
-    # the logon page. We detect this here.
-    if '<title>LinkedIn Login' in response.text:
-        print("[!] Check your username and password and try again.\n")
-        return False
-
-    # If we make it past everything above, we have no idea what happened.
-    # Oh well, we fail.
-    print("[!] Some unknown error logging in. If this persists, please open an issue on github.\n")
-    print("DEBUG INFO:")
-    print(f"RESPONSE CODE: {response.status_code}")
-    print(f"RESPONSE TEXT:\n{response.text}")
-    return False
+    return session
 
 
 def set_csrf_token(session):
@@ -717,7 +624,7 @@ def main():
     args = parse_arguments()
 
     # Instantiate a session by logging in to LinkedIn.
-    session = login(args)
+    session = login()
 
     # If we can't get a valid session, we quit now. Specific errors are
     # printed to the console inside the login() function.
