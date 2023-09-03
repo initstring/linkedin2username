@@ -661,8 +661,6 @@ def main():
     if not session:
         sys.exit()
 
-    print("[*] Successfully logged in.")
-
     # Special options below when using a proxy server. Helpful for debugging
     # the application in Burp Suite.
     if args.proxy:
