@@ -19,6 +19,7 @@ import requests
 import urllib3
 
 from selenium import webdriver
+from selenium.common.exceptions import WebDriverException
 
 BANNER = r"""
 
@@ -247,6 +248,17 @@ def parse_arguments():
 
     return args
 
+def get_webdriver():
+    """
+    Try to get a working Selenium browser driver
+    """
+    for browser in [webdriver.Firefox, webdriver.Chrome]:
+        try:
+            return browser()
+        except WebDriverException:
+            continue
+    return None
+
 
 def login():
     """Creates a new authenticated session.
@@ -254,7 +266,12 @@ def login():
     This now uses Selenium because I got very tired playing cat/mouse
     with LinkedIn's login process.
     """
-    driver = webdriver.Firefox()
+    driver = get_webdriver()
+
+    if driver is None:
+        print("[!] Could not find a supported browser for Selenium. Exiting.")
+        sys.exit(1)
+
     driver.get("https://linkedin.com/login")
 
     # Pause until the user lets us know the session is good.
