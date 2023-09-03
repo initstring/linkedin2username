@@ -248,6 +248,7 @@ def parse_arguments():
 
     return args
 
+
 def get_webdriver():
     """
     Try to get a working Selenium browser driver
@@ -291,9 +292,9 @@ def login():
                     'Build/KOT49H) AppleWebKit/534.30 (KHTML, like Gecko) '
                     'Version/4.0 Mobile Safari/534.30')
     session.headers.update({'User-Agent': mobile_agent,
-                             'X-RestLi-Protocol-Version': '2.0.0',
-                             'X-Li-Track': '{"clientVersion":"1.13.1665"}'})
-    
+                            'X-RestLi-Protocol-Version': '2.0.0',
+                            'X-Li-Track': '{"clientVersion":"1.13.1665"}'})
+
     # Set the CSRF token
     session = set_csrf_token(session)
 
