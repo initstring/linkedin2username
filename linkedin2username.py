@@ -275,7 +275,9 @@ def login():
     driver.get("https://linkedin.com/login")
 
     # Pause until the user lets us know the session is good.
-    input("Press Enter after you've logged in...")
+    print("[*] Log in to LinkedIn. Leave the browser open and press enter when ready...")
+    input("Ready? Press Enter!")
+
     selenium_cookies = driver.get_cookies()
     driver.quit()
 
