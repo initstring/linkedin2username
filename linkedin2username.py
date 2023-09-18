@@ -504,8 +504,7 @@ def find_employees(result):
                        ['com.linkedin.voyager.search.SearchProfile']
                        ['miniProfile'])
         full_name = f"{profile['firstName']} {profile['lastName']}"
-        employee = {'full_name': full_name,
-                    'occupation': profile['occupation']}
+        employee = {'full_name': full_name}
 
         # Some employee names are not disclosed and return empty. We don't want those.
         if len(employee['full_name']) > 1:
@@ -626,9 +625,8 @@ def write_files(company, domain, employees, out_dir):
             outfile.write(employee['full_name'] + '\n')
 
     with open(f'{out_dir}/{company}-metadata.txt', 'w', encoding='utf-8') as outfile:
-        outfile.write('full_name,occupation\n')
         for employee in employees:
-            outfile.write(employee['full_name'] + ',' + employee["occupation"] + '\n')
+            outfile.write(employee['full_name'] + '\n')
 
     with open(f'{out_dir}/{company}-flast.txt', 'w', encoding='utf-8') as outfile:
         write_lines(employees, 'f_last', domain, outfile)
