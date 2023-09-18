@@ -509,10 +509,11 @@ def find_employees(result):
         full_name = f"{profile.get('firstName', '')} {profile.get('lastName', '')}".strip()
         occupation = profile.get('occupation', "")
 
-        if full_name:
+        if len(full_name) > 1:
             found_employees.append({'full_name': full_name, 'occupation': occupation})
 
     return found_employees
+
 
 
 
