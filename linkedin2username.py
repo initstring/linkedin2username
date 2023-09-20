@@ -514,7 +514,7 @@ for body in result_json.get('elements', []):
         full_name = f"{first_name} {last_name}"
         occupation = profile.get('occupation', "")
 
-return found_employees
+    return found_employees
 
 
 
