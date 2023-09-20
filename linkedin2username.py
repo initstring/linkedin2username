@@ -513,6 +513,7 @@ def find_employees(result):
         if first_name and last_name:
             full_name = f"{first_name} {last_name}"
             occupation = profile.get('occupation', "")
+            found_employees.append({'full_name': full_name, 'occupation': occupation})
 
     return found_employees
 
