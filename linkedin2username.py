@@ -499,20 +499,20 @@ def find_employees(result):
     # The "elements" list is the mini-profile you see when scrolling through a
     # company's employees. It does not have all info on the person, like their
     # entire job history. It only has some basics.
-found_employees = []
-for body in result_json.get('elements', []):
-    profile = (
-        body.get('hitInfo', {})
-        .get('com.linkedin.voyager.search.SearchProfile', {})
-        .get('miniProfile', {})
-    )
-    first_name = profile.get('firstName', '').strip()
-    last_name = profile.get('lastName', '').strip()
+    found_employees = []
+    for body in result_json.get('elements', []):
+        profile = (
+            body.get('hitInfo', {})
+            .get('com.linkedin.voyager.search.SearchProfile', {})
+            .get('miniProfile', {})
+        )
+        first_name = profile.get('firstName', '').strip()
+        last_name = profile.get('lastName', '').strip()
 
-    # Dont include profiles that have only a single name
-    if first_name and last_name:
-        full_name = f"{first_name} {last_name}"
-        occupation = profile.get('occupation', "")
+        # Dont include profiles that have only a single name
+        if first_name and last_name:
+            full_name = f"{first_name} {last_name}"
+            occupation = profile.get('occupation', "")
 
     return found_employees
 
