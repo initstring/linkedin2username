@@ -8,6 +8,7 @@ TEST_NAMES = {
     2: "John Davidson-Smith",
     3: "John-Paul Smith-Robinson",
     4: "José Gonzáles",
+    5: "🙂 Emoji Folks 🙂"
 }
 
 
@@ -28,6 +29,10 @@ def test_f_last():
     mutator = NameMutator(name)
     assert mutator.f_last() == set(["jgonzales", ])
 
+    name = TEST_NAMES[5]
+    mutator = NameMutator(name)
+    assert mutator.f_last() == set(["efolks", ])
+
 
 def test_f_dot_last():
     name = TEST_NAMES[1]
@@ -45,6 +50,10 @@ def test_f_dot_last():
     name = TEST_NAMES[4]
     mutator = NameMutator(name)
     assert mutator.f_dot_last() == set(["j.gonzales", ])
+
+    name = TEST_NAMES[5]
+    mutator = NameMutator(name)
+    assert mutator.f_dot_last() == set(["e.folks", ])
 
 
 def test_last_f():
@@ -64,6 +73,10 @@ def test_last_f():
     mutator = NameMutator(name)
     assert mutator.last_f() == set(["gonzalesj", ])
 
+    name = TEST_NAMES[5]
+    mutator = NameMutator(name)
+    assert mutator.last_f() == set(["folkse", ])
+
 
 def test_first_dot_last():
     name = TEST_NAMES[1]
@@ -81,6 +94,10 @@ def test_first_dot_last():
     name = TEST_NAMES[4]
     mutator = NameMutator(name)
     assert mutator.first_dot_last() == set(["jose.gonzales", ])
+
+    name = TEST_NAMES[5]
+    mutator = NameMutator(name)
+    assert mutator.first_dot_last() == set(["emoji.folks", ])
 
 
 def test_first_l():
@@ -100,6 +117,10 @@ def test_first_l():
     mutator = NameMutator(name)
     assert mutator.first_l() == set(["joseg", ])
 
+    name = TEST_NAMES[5]
+    mutator = NameMutator(name)
+    assert mutator.first_l() == set(["emojif", ])
+
 
 def test_first():
     name = TEST_NAMES[1]
@@ -117,6 +138,10 @@ def test_first():
     name = TEST_NAMES[4]
     mutator = NameMutator(name)
     assert mutator.first() == set(["jose", ])
+
+    name = TEST_NAMES[5]
+    mutator = NameMutator(name)
+    assert mutator.first() == set(["emoji", ])
 
 
 def test_clean_name():
