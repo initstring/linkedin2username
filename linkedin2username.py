@@ -205,7 +205,7 @@ def parse_arguments():
                         )
     parser.add_argument('-d', '--depth', type=int, action='store',
                         default=False,
-                        help='Search depth (how many loops of 25). If unset, '
+                        help='Search depth (how many loops of 50). If unset, '
                         'will try to grab them all.')
     parser.add_argument('-s', '--sleep', type=int, action='store', default=0,
                         help='Seconds to sleep between search loops.'
@@ -405,9 +405,9 @@ def set_inner_loops(staff_count, args):
 
     """
 
-    # We will look for 25 names on each loop. So, we set a maximum amount of
-    # loops to the amount of staff / 25 +1 more to catch remainders.
-    loops = int((staff_count / 25) + 1)
+    # We will look for 50 names on each loop. So, we set a maximum amount of
+    # loops to the amount of staff / 50 +1 more to catch remainders.
+    loops = int((staff_count / 50) + 1)
 
     print(f"[*] Company has {staff_count} profiles to check. Some may be anonymous.")
 
@@ -435,7 +435,7 @@ def set_inner_loops(staff_count, args):
               " might not get them all.\n\n")
     else:
         print(f"[*] Setting each iteration to a maximum of {loops} loops of"
-              " 25 results each.\n\n")
+              " 50 results each.\n\n")
         args.depth = loops
 
     return args.depth, args.geoblast
@@ -448,7 +448,7 @@ def get_results(session, company_id, page, region, keyword):
     scrolling through search results.
 
     The mobile site defaults to using a 'count' of 10, but testing shows that
-    25 is allowed. This behavior will appear to the web server as someone
+    50 is allowed. This behavior will appear to the web server as someone
     scrolling quickly through all available results.
     """
     # When using the --geoblast feature, we need to inject our set of region
@@ -458,15 +458,18 @@ def get_results(session, company_id, page, region, keyword):
 
     # Build the base search URL.
     url = ('https://www.linkedin.com'
-           '/voyager/api/search/hits'
-           f'?facetCurrentCompany=List({company_id})'
-           f'&facetGeoRegion=List({region})'
-           f'&keywords=List({keyword})'
-           '&q=people&maxFacetValues=15'
-           '&supportedFacets=List(GEO_REGION,CURRENT_COMPANY)'
-           '&count=25'
-           '&origin=organization'
-           f'&start={page * 25}')
+            '/voyager/api/graphql?variables=('
+                f'start:{page * 50},'
+                f'query:('
+                    f'{f"keywords:{keyword}," if keyword else ""}'
+                    'flagshipSearchIntent:SEARCH_SRP,'
+                    f'queryParameters:List((key:currentCompany,value:List({company_id})),'
+                    f'{f"(key:geoUrn,value:List({region}))," if region else ""}'
+                    '(key:resultType,value:List(PEOPLE))'
+                '),'
+                'includeFiltersInResponse:false'
+            '),count:50)'
+            '&queryId=voyagerSearchDashClusters.66adc6056cf4138949ca5dcb31bb1749')
 
     # Perform the search for this iteration.
     result = session.get(url)
@@ -493,26 +496,32 @@ def find_employees(result):
 
     # When you get to the last page of results, the next page will have an empty
     # "elements" list.
-    if not result_json['elements']:
+    if result_json['data']['searchDashClustersByAll']['paging']["start"] >= result_json['data']['searchDashClustersByAll']['paging']["total"]:
         return False
 
     # The "elements" list is the mini-profile you see when scrolling through a
     # company's employees. It does not have all info on the person, like their
     # entire job history. It only has some basics.
     found_employees = []
-    for body in result_json.get('elements', []):
-        profile = (
-            body.get('hitInfo', {})
-            .get('com.linkedin.voyager.search.SearchProfile', {})
-            .get('miniProfile', {})
-        )
-        first_name = profile.get('firstName', '').strip()
-        last_name = profile.get('lastName', '').strip()
+    for elements in result_json['data']['searchDashClustersByAll'].get('elements', []):
+        # For some reason it's nested
+        for itemBody in elements.get('items', []):
+            # Info we want is all under 'entityResult'
+            entity = itemBody['item']['entityResult']
 
-        # Dont include profiles that have only a single name
-        if first_name and last_name:
-            full_name = f"{first_name} {last_name}"
-            occupation = profile.get('occupation', "")
+            # There's some useless entries we need to skip over
+            if not entity:
+                continue
+
+            # There is no first/last name fields anymore so we're taking the full name
+            full_name = entity['title']['text'].strip()
+
+            # The name may include extras like "Dr" at the start, so we do some basic stripping
+            if full_name[:3] == 'Dr ':
+                full_name = full_name[4:]
+
+            occupation = entity['primarySubtitle']['text']
+
             found_employees.append({'full_name': full_name, 'occupation': occupation})
 
     return found_employees
@@ -556,7 +565,7 @@ def do_loops(session, company_id, outer_loops, args):
                 current_region = ''
                 current_keyword = ''
 
-            # This is the inner loop. It will search results 25 at a time.
+            # This is the inner loop. It will search results 50 at a time.
             for page in range(0, args.depth):
                 new_names = 0
 
