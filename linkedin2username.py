@@ -457,19 +457,18 @@ def get_results(session, company_id, page, region, keyword):
         region = re.sub(':', '%3A', region)  # must URL encode this parameter
 
     # Build the base search URL.
-    url = ('https://www.linkedin.com'
-            '/voyager/api/graphql?variables=('
-                f'start:{page * 50},'
-                f'query:('
-                    f'{f"keywords:{keyword}," if keyword else ""}'
-                    'flagshipSearchIntent:SEARCH_SRP,'
-                    f'queryParameters:List((key:currentCompany,value:List({company_id})),'
-                    f'{f"(key:geoUrn,value:List({region}))," if region else ""}'
-                    '(key:resultType,value:List(PEOPLE))'
-                '),'
-                'includeFiltersInResponse:false'
-            '),count:50)'
-            '&queryId=voyagerSearchDashClusters.66adc6056cf4138949ca5dcb31bb1749')
+    url = ('https://www.linkedin.com/voyager/api/graphql?variables=('
+           f'start:{page * 50},'
+           f'query:('
+           f'{f"keywords:{keyword}," if keyword else ""}'
+           'flagshipSearchIntent:SEARCH_SRP,'
+           f'queryParameters:List((key:currentCompany,value:List({company_id})),'
+           f'{f"(key:geoUrn,value:List({region}))," if region else ""}'
+           '(key:resultType,value:List(PEOPLE))'
+           '),'
+           'includeFiltersInResponse:false'
+           '),count:50)'
+           '&queryId=voyagerSearchDashClusters.66adc6056cf4138949ca5dcb31bb1749')
 
     # Perform the search for this iteration.
     result = session.get(url)
@@ -502,9 +501,8 @@ def find_employees(result):
     total = paging.get('total', 0)
 
     # If we've ended up with empty dicts or zero results left, bail out
-    if total is 0:
+    if total == 0:
         return False
-
 
     # The "elements" list is the mini-profile you see when scrolling through a
     # company's employees. It does not have all info on the person, like their
@@ -512,9 +510,9 @@ def find_employees(result):
     found_employees = []
     for element in elements:
         # For some reason it's nested
-        for itemBody in element.get('items', []):
+        for item_body in element.get('items', []):
             # Info we want is all under 'entityResult'
-            entity = itemBody['item']['entityResult']
+            entity = item_body['item']['entityResult']
 
             # There's some useless entries we need to skip over
             if not entity:
@@ -532,8 +530,6 @@ def find_employees(result):
             found_employees.append({'full_name': full_name, 'occupation': occupation})
 
     return found_employees
-
-
 
 
 def do_loops(session, company_id, outer_loops, args):
