@@ -494,18 +494,25 @@ def find_employees(result):
         print(result[:200])
         return False
 
-    # When you get to the last page of results, the next page will have an empty
-    # "elements" list.
-    if result_json['data']['searchDashClustersByAll']['paging']["start"] >= result_json['data']['searchDashClustersByAll']['paging']["total"]:
+    # Walk the data, being careful to avoid key errors
+    data = result_json.get('data', {})
+    search_clusters = data.get('searchDashClustersByAll', {})
+    elements = paging = search_clusters.get('elements', [])
+    paging = search_clusters.get('paging', {})
+    total = paging.get('total', 0)
+
+    # If we've ended up with empty dicts or zero results left, bail out
+    if total is 0:
         return False
+
 
     # The "elements" list is the mini-profile you see when scrolling through a
     # company's employees. It does not have all info on the person, like their
     # entire job history. It only has some basics.
     found_employees = []
-    for elements in result_json['data']['searchDashClustersByAll'].get('elements', []):
+    for element in elements:
         # For some reason it's nested
-        for itemBody in elements.get('items', []):
+        for itemBody in element.get('items', []):
             # Info we want is all under 'entityResult'
             entity = itemBody['item']['entityResult']
 
