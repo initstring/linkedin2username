@@ -35,9 +35,8 @@ BANNER = r"""
 
 """
 
-# The dictionary below is a best-effort attempt to spread a search load
-# across sets of geographic locations. This can bypass the 1000 result
-# search limit as we are now allowed 1000 per geo set.
+# The dictionary below contains geo region codes. Because we are limited to 1000 results per search,
+# we can use this to batch searches across regions and get more results.
 # I found this in some random JS, so who knows if it will change.
 # https://static.licdn.com/aero-v1/sc/h/6pw526ylxpzsa7nu7ht18bo8y
 GEO_REGIONS = {
@@ -506,9 +505,9 @@ def get_results(session, company_id, page, region, keyword):
 
 def find_employees(result):
     """
-    Takes the text response of an HTTP query, converst to JSON, and extracts employee details.
+    Takes the text response of an HTTP query, converts to JSON, and extracts employee details.
 
-    Retuns a list of dictionary items, or False if none found.
+    Returns a list of dictionary items, or False if none found.
     """
     found_employees = []
 
