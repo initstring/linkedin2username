@@ -89,7 +89,6 @@ GEO_REGIONS = {
 }
 
 
-
 class NameMutator():
     """
     This class handles all name mutations.
