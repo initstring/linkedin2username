@@ -38,22 +38,56 @@ BANNER = r"""
 # The dictionary below is a best-effort attempt to spread a search load
 # across sets of geographic locations. This can bypass the 1000 result
 # search limit as we are now allowed 1000 per geo set.
-# developer.linkedin.com/docs/v1/companies/targeting-company-shares#additionalcodes
+# I found this in some random JS, so who knows if it will change.
+# https://static.licdn.com/aero-v1/sc/h/6pw526ylxpzsa7nu7ht18bo8y
 GEO_REGIONS = {
-    'r0': 'us:0',
-    'r1': 'ca:0',
-    'r2': 'gb:0',
-    'r3': 'au:0|nz:0',
-    'r4': 'cn:0|hk:0',
-    'r5': 'jp:0|kr:0|my:0|np:0|ph:0|sg:0|lk:0|tw:0|th:0|vn:0',
-    'r6': 'in:0',
-    'r7': 'at:0|be:0|bg:0|hr:0|cz:0|dk:0|fi:0',
-    'r8': 'fr:0|de:0',
-    'r9': 'gr:0|hu:0|ie:0|it:0|lt:0|nl:0|no:0|pl:0|pt:0',
-    'r10': 'ro:0|ru:0|rs:0|sk:0|es:0|se:0|ch:0|tr:0|ua:0',
-    'r11': ('ar:0|bo:0|br:0|cl:0|co:0|cr:0|do:0|ec:0|gt:0|mx:0|pa:0|pe:0'
-            '|pr:0|tt:0|uy:0|ve:0'),
-    'r12': 'af:0|bh:0|il:0|jo:0|kw:0|pk:0|qa:0|sa:0|ae:0'}
+    "ar": "100446943",
+    "at": "103883259",
+    "au": "101452733",
+    "be": "100565514",
+    "bg": "105333783",
+    "ca": "101174742",
+    "ch": "106693272",
+    "cl": "104621616",
+    "de": "101282230",
+    "dk": "104514075",
+    "es": "105646813",
+    "fi": "100456013",
+    "fo": "104630756",
+    "fr": "105015875",
+    "gb": "101165590",
+    "gf": "105001561",
+    "gp": "104232339",
+    "gr": "104677530",
+    "gu": "107006862",
+    "hr": "104688944",
+    "hu": "100288700",
+    "is": "105238872",
+    "it": "103350119",
+    "li": "100878084",
+    "lu": "104042105",
+    "mq": "103091690",
+    "nl": "102890719",
+    "no": "103819153",
+    "nz": "105490917",
+    "pe": "102927786",
+    "pl": "105072130",
+    "pr": "105245958",
+    "pt": "100364837",
+    "py": "104065273",
+    "re": "104265812",
+    "rs": "101855366",
+    "ru": "101728296",
+    "se": "105117694",
+    "sg": "102454443",
+    "si": "106137034",
+    "tw": "104187078",
+    "ua": "102264497",
+    "us": "103644278",
+    "uy": "100867946",
+    "ve": "101490751"
+}
+
 
 
 class NameMutator():
@@ -451,10 +485,6 @@ def get_results(session, company_id, page, region, keyword):
     50 is allowed. This behavior will appear to the web server as someone
     scrolling quickly through all available results.
     """
-    # When using the --geoblast feature, we need to inject our set of region
-    # codes into the search parameter.
-    if region:
-        region = re.sub(':', '%3A', region)  # must URL encode this parameter
 
     # Build the base search URL.
     url = ('https://www.linkedin.com/voyager/api/graphql?variables=('
@@ -556,10 +586,10 @@ def do_loops(session, company_id, outer_loops, args):
     try:
         for current_loop in outer_loops:
             if args.geoblast:
-                region_name = 'r' + str(current_loop)
-                current_region = GEO_REGIONS[region_name]
+                region_name, region_id = list(GEO_REGIONS.items())[current_loop]
+                current_region = region_id
                 current_keyword = ''
-                print(f"\n[*] Looping through region {current_region}")
+                print(f"\n[*] Looping through region {region_name}")
             elif args.keywords:
                 current_keyword = args.keywords[current_loop]
                 current_region = ''
