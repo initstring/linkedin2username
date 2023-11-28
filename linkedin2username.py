@@ -151,6 +151,10 @@ class NameMutator():
         """
         parsed = re.split(' |-', name)
 
+        # Discard people without at least a first and last name
+        if len(parsed) < 2:
+            return None
+
         if len(parsed) > 2:
             split_name = {'first': parsed[0], 'second': parsed[-2], 'last': parsed[-1]}
         else:
@@ -648,8 +652,9 @@ def write_lines(employees, name_func, domain, outfile):
     """
     for employee in employees:
         mutator = NameMutator(employee["full_name"])
-        for name in getattr(mutator, name_func)():
-            outfile.write(name + domain + '\n')
+        if mutator.name:
+            for name in getattr(mutator, name_func)():
+                outfile.write(name + domain + '\n')
 
 
 def write_files(company, domain, employees, out_dir):
