@@ -157,36 +157,31 @@ class NameMutator():
             split_name = {'first': parsed[0], 'second': '', 'last': parsed[-1]}
 
         return split_name
-
+    
     def f_last(self):
         """jsmith"""
         names = set()
-        names.add(self.name['first'][0] + self.name['last'])
+        if self.name['first']:
+            names.add(self.name['first'][0] + self.name['last'])
 
         if self.name['second']:
             names.add(self.name['first'][0] + self.name['second'])
 
         return names
 
+
     def f_dot_last(self):
-        """j.smith"""
-        names = set()
-        names.add(self.name['first'][0] + '.' + self.name['last'])
+        if self.name['first'] and self.name['last']:  # Check if both first and last names are not empty
+            return {self.name['first'][0] + '.' + self.name['last']}
+        else:
+            return set()  # Return an empty set if either name part is missing
 
-        if self.name['second']:
-            names.add(self.name['first'][0] + '.' + self.name['second'])
-
-        return names
 
     def last_f(self):
-        """smithj"""
-        names = set()
-        names.add(self.name['last'] + self.name['first'][0])
-
-        if self.name['second']:
-            names.add(self.name['second'] + self.name['first'][0])
-
-        return names
+        if self.name['last'] and self.name['first']:  # Check if both last and first names are not empty
+            return {self.name['last'] + self.name['first'][0]}
+        else:
+            return set()  # Return an empty set if either name part is missing
 
     def first_dot_last(self):
         """john.smith"""
@@ -199,14 +194,11 @@ class NameMutator():
         return names
 
     def first_l(self):
-        """johns"""
-        names = set()
-        names.add(self.name['first'] + self.name['last'][0])
+        if self.name['first'] and self.name['last']:  # Check if both first and last names are not empty
+            return {self.name['first'] + self.name['last'][0]}
+        else:
+            return set()  # Return an empty set if either name part is missing
 
-        if self.name['second']:
-            names.add(self.name['first'] + self.name['second'][0])
-
-        return names
 
     def first(self):
         """john"""
