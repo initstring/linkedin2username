@@ -149,7 +149,11 @@ class NameMutator():
         Some people have funny names. We assume the most important names are:
         first name, last name, and the name right before the last name (if they have one)
         """
-        parsed = re.split(' |-', name)
+        # Split on spaces and dashes (included repeated)
+        parsed = re.split(r'[\s-]+', name)
+
+        # Iterate and remove empty strings
+        parsed = [part for part in parsed if part]
 
         # Discard people without at least a first and last name
         if len(parsed) < 2:
@@ -159,6 +163,10 @@ class NameMutator():
             split_name = {'first': parsed[0], 'second': parsed[-2], 'last': parsed[-1]}
         else:
             split_name = {'first': parsed[0], 'second': '', 'last': parsed[-1]}
+
+        # Final sanity check to not proceed without first and last name
+        if not split_name['first'] or not split_name['last']:
+            return None
 
         return split_name
 
@@ -544,7 +552,7 @@ def find_employees(result):
         # For some reason it's nested
         for item_body in element.get('items', []):
             # Info we want is all under 'entityResult'
-            entity = item_body['item']['entityResult']
+            entity = item_body.get('item', {}).get('entityResult', {})
 
             # There's some useless entries we need to skip over
             if not entity:
@@ -557,7 +565,8 @@ def find_employees(result):
             if full_name[:3] == 'Dr ':
                 full_name = full_name[4:]
 
-            occupation = entity['primarySubtitle']['text']
+            # Some users are missing a primary subtitle
+            occupation = entity.get('primarySubtitle', {}).get('text', '') if entity.get('primarySubtitle') else ''
 
             found_employees.append({'full_name': full_name, 'occupation': occupation})
 
