@@ -17,6 +17,7 @@ import json
 import urllib.parse
 import requests
 import urllib3
+import json
 
 from selenium import webdriver
 from selenium.common.exceptions import WebDriverException
@@ -281,6 +282,9 @@ def parse_arguments():
                         ' regions.')
     parser.add_argument('-o', '--output', default="li2u-output", action="store",
                         help='Output Directory, defaults to li2u-output')
+    
+    parser.add_argument('-f', '--format', default='txt', action='store',
+                        help='Output format [txt|json], default txt')
 
     args = parser.parse_args()
 
@@ -666,21 +670,33 @@ def do_loops(session, company_id, outer_loops, args):
     return employee_list
 
 
-def write_lines(employees, name_func, domain, outfile):
+def write_lines(employees, name_func, domain, outfile, out_format):
     """
     Helper function to mutate names and write to an outfile
 
     Needs to be called with a string variable in name_func that matches the class method
     name in the NameMutator class.
     """
-    for employee in employees:
-        mutator = NameMutator(employee["full_name"])
-        if mutator.name:
-            for name in getattr(mutator, name_func)():
-                outfile.write(name + domain + '\n')
+
+    if out_format == 'json':
+        json_init = {name_func:None}
+        list_name = []
+        for employee in employees:
+            mutator = NameMutator(employee["full_name"])
+            if mutator.name:
+                    for name in getattr(mutator, name_func)():
+                        list_name.append(name + domain)
+                    json_init.update({name_func:list_name})
+        outfile.write(json.dumps(json_init))
+    else:
+        for employee in employees:
+            mutator = NameMutator(employee["full_name"])
+            if mutator.name:
+                for name in getattr(mutator, name_func)():
+                    outfile.write(name + domain + '\n')
 
 
-def write_files(company, domain, employees, out_dir):
+def write_files(company, domain, employees, out_dir, out_format):
     """Writes data to various formatted output files.
 
     After scraping and processing is complete, this function formats the raw
@@ -694,33 +710,56 @@ def write_files(company, domain, employees, out_dir):
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
 
+    if out_format == 'json':
+        file_extention = 'json'
+        json_output = {company}
+    else:
+        file_extention = 'txt'
+
     # Write out all the raw and mutated names to files
-    with open(f'{out_dir}/{company}-rawnames.txt', 'w', encoding='utf-8') as outfile:
-        for employee in employees:
-            outfile.write(employee['full_name'] + '\n')
+    with open(f'{out_dir}/{company}-rawnames.' + file_extention, 'w') as outfile:
+        if out_format == 'json':
+            json_init = {'rawnames':None}
+            list_rawname = []
+            for employee in employees:
+                list_rawname.append(employee['full_name'])
+            json_init.update({'rawnames':list_rawname})
+            outfile.write(json.dumps(json_init))
+        else:
+            for employee in employees:
+                outfile.write(employee['full_name'] + '\n')
 
-    with open(f'{out_dir}/{company}-metadata.txt', 'w', encoding='utf-8') as outfile:
-        outfile.write('full_name,occupation\n')
-        for employee in employees:
-            outfile.write(employee['full_name'] + ',' + employee["occupation"] + '\n')
+    with open(f'{out_dir}/{company}-metadata.' + file_extention, 'w', encoding='utf-8') as outfile:
+        if out_format == 'json':
+            json_init = {'metadata':None}
+            list_metadata = []
+            for employee in employees:
+                list_metadata.append({'full_name':employee['full_name'],
+                                      'occupation':employee["occupation"]})
+            json_init.update({'metadata':list_metadata})
+            outfile.write(json.dumps(json_init))
+        else:
+            outfile.write('full_name,occupation\n')
+            for employee in employees:
+                outfile.write(employee['full_name'] + ',' + employee["occupation"] + '\n')
 
-    with open(f'{out_dir}/{company}-flast.txt', 'w', encoding='utf-8') as outfile:
-        write_lines(employees, 'f_last', domain, outfile)
+    with open(f'{out_dir}/{company}-flast.' + file_extention, 'w', encoding='utf-8') as outfile:
+        write_lines(employees, 'f_last', domain, outfile, out_format)
 
-    with open(f'{out_dir}/{company}-f.last.txt', 'w', encoding='utf-8') as outfile:
-        write_lines(employees, 'f_dot_last', domain, outfile)
+    with open(f'{out_dir}/{company}-f.last.' + file_extention, 'w', encoding='utf-8') as outfile:
+        write_lines(employees, 'f_dot_last', domain, outfile, out_format)
 
-    with open(f'{out_dir}/{company}-firstl.txt', 'w', encoding='utf-8') as outfile:
-        write_lines(employees, 'first_l', domain, outfile)
+    with open(f'{out_dir}/{company}-firstl.' + file_extention, 'w', encoding='utf-8') as outfile:
+        write_lines(employees, 'first_l', domain, outfile, out_format)
 
-    with open(f'{out_dir}/{company}-first.last.txt', 'w', encoding='utf-8') as outfile:
-        write_lines(employees, 'first_dot_last', domain, outfile)
+    with open(f'{out_dir}/{company}-first.last.' + file_extention, 'w', encoding='utf-8') as outfile:
+        write_lines(employees, 'first_dot_last', domain, outfile, out_format)
 
-    with open(f'{out_dir}/{company}-first.txt', 'w', encoding='utf-8') as outfile:
-        write_lines(employees, 'first', domain, outfile)
+    with open(f'{out_dir}/{company}-first.' + file_extention, 'w', encoding='utf-8') as outfile:
+        write_lines(employees, 'first', domain, outfile, out_format)
 
-    with open(f'{out_dir}/{company}-lastf.txt', 'w', encoding='utf-8') as outfile:
-        write_lines(employees, 'last_f', domain, outfile)
+    with open(f'{out_dir}/{company}-lastf.' + file_extention, 'w', encoding='utf-8') as outfile:
+        write_lines(employees, 'last_f', domain, outfile, out_format)
 
 
 def main():
@@ -758,7 +797,7 @@ def main():
     employees = do_loops(session, company_id, outer_loops, args)
 
     # Write the data to some files.
-    write_files(args.company, args.domain, employees, args.output)
+    write_files(args.company, args.domain, employees, args.output, args.format)
 
     # Time to get hacking.
     print(f"\n\n[*] All done! Check out your lovely new files in {args.output}")
